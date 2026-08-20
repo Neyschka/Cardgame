@@ -4,7 +4,7 @@
 // rules (`docs/game-mechanics.md`), so unlike the old `illegalReason` there is
 // nothing here to explain a dead card with.
 
-import type { CardEffect, EffectKind, HandCard } from '@card-game/shared';
+import type { CardEffect, EffectKind } from '@card-game/shared';
 
 /** The card generator's `ACTION_COLORS` — kept in sync by hand since the art
  *  pack and this renderer are separate outputs of the same source. `strip` is
@@ -36,9 +36,11 @@ export interface EffectPill {
 const pillLabel = (effect: CardEffect): string =>
   effect.target === 'all' ? `${effect.value} all` : `${effect.value}`;
 
-/** One pill per effect on the card, in the order the card defines them — the
- *  stack a hand card renders as now that a card can do more than one thing. */
-export const effectPills = (card: HandCard): EffectPill[] =>
+/** One pill per effect, in the order the card defines them — the stack a hand
+ *  card (or the display's `lastPlayed`) renders as now that a card can do
+ *  more than one thing. Takes just the `effects` array, not a full
+ *  `HandCard`, so the display client can reuse it for `lastPlayed` too. */
+export const effectPills = (card: { effects: CardEffect[] }): EffectPill[] =>
   card.effects.map((effect) => ({
     kind: effect.kind,
     color: ACTION_COLORS[effect.kind],
