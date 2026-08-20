@@ -349,6 +349,26 @@ describe('server socket wiring', () => {
     expect(eliminated.matchResult).toBeNull();
   });
 
+  it('sends a fresh tableState on a successful joinAsDisplay, not just at connection', async () => {
+    // A real display's own connect races the connection-time push above (a
+    // `fetch` first, then its `tableState` listener) and usually loses it —
+    // this is the state that actually has to arrive.
+    const server = await startServer();
+    const display = await server.client();
+    await server.seatPlayers('Alice');
+    const statesBefore = display.states.length;
+
+    const ack = await display.socket.emitWithAck('joinAsDisplay', {
+      roomCode: ROOM_CODE,
+    });
+
+    expect(ack).toEqual({ ok: true });
+    const seen = await waitFor('a tableState pushed by the join itself', () =>
+      display.states.length > statesBefore ? display.states.at(-1) : undefined,
+    );
+    expect(seen.seats[0]).toMatchObject({ name: 'Alice' });
+  });
+
   it('gates the display on the room code without seating it', async () => {
     const server = await startServer();
     const display = await server.client();

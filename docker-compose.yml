@@ -1,5 +1,4 @@
 ---
-
 services:
   claude:
     image: 745136425148.dkr.ecr.eu-west-1.amazonaws.com/wondeltd/claude:latest
@@ -11,7 +10,7 @@ services:
     networks:
       - agent_net
     environment:
-      ISOLATED_NET_SUBNET: "192.168.100.0/24"
+      ISOLATED_NET_SUBNET: '192.168.100.0/24'
 
   install:
     image: node:24-alpine
@@ -28,9 +27,9 @@ services:
     networks:
       - app_net
     ports:
-      - "3001:3001"
+      - '3001:3001'
     environment:
-      PORT: "3001"
+      PORT: '3001'
     depends_on:
       install:
         condition: service_completed_successfully
@@ -44,7 +43,9 @@ services:
     networks:
       - app_net
     ports:
-      - "5173:5173"
+      - '5173:5173'
+    environment:
+      SERVER_ORIGIN: 'http://server:3001'
     depends_on:
       install:
         condition: service_completed_successfully
