@@ -1,27 +1,47 @@
-// How a hand card reads on screen. The server sends `legal` as a bare boolean
-// (`HandCard`), so the one-line reason a dead card shows in the grid is
-// re-derived from its type here — the only client-side rule knowledge in the
-// player client, and it mirrors `server/src/gameState.ts`'s `illegalReason`
-// rather than deciding anything itself.
+// How a hand card reads on screen. A card can combine more than one effect
+// now (`server/src/cards.ts`'s combo cards), so there's no single type/value
+// to label — each effect gets its own pill instead. Legality is gone from the
+// rules (`docs/game-mechanics.md`), so unlike the old `illegalReason` there is
+// nothing here to explain a dead card with.
 
-import type { CardType, HandCard } from '@card-game/shared'
+import type { CardEffect, EffectKind, HandCard } from '@card-game/shared';
 
-const TYPE_ICON: Record<CardType, string> = {
-  Attack: '⚔️',
-  Defense: '🛡️',
-  Heal: '➕',
+/** The card generator's `ACTION_COLORS` — kept in sync by hand since the art
+ *  pack and this renderer are separate outputs of the same source. `strip` is
+ *  its own color (orange), not blue: a destroyed shield must not read as a
+ *  gained one. */
+export const ACTION_COLORS: Record<EffectKind, string> = {
+  attack: '#f87171',
+  shield: '#60a5fa',
+  heal: '#f472b6',
+  draw: '#a78bfa',
+  strip: '#fb923c',
+};
+
+const EFFECT_ICON: Record<EffectKind, string> = {
+  attack: '⚔️',
+  shield: '🛡️',
+  heal: '➕',
+  draw: '🃏',
+  strip: '🔻',
+};
+
+export interface EffectPill {
+  kind: EffectKind;
+  color: string;
+  icon: string;
+  label: string;
 }
 
-export const typeIcon = (type: CardType): string => TYPE_ICON[type]
+const pillLabel = (effect: CardEffect): string =>
+  effect.target === 'all' ? `${effect.value} all` : `${effect.value}`;
 
-export const cardLabel = (card: HandCard): string =>
-  card.value == null ? card.type : `${card.type} ${card.value}`
-
-/** The three conditions in `docs/game-mechanics.md`'s "Legal play conditions",
- *  worded exactly as `server/src/gameState.ts`'s `illegalReason` words them. */
-export function illegalReason(card: HandCard): string | null {
-  if (card.legal) return null
-  if (card.type === 'Defense') return 'already shielded'
-  if (card.type === 'Heal') return 'already at full HP'
-  return 'no living opponents'
-}
+/** One pill per effect on the card, in the order the card defines them — the
+ *  stack a hand card renders as now that a card can do more than one thing. */
+export const effectPills = (card: HandCard): EffectPill[] =>
+  card.effects.map((effect) => ({
+    kind: effect.kind,
+    color: ACTION_COLORS[effect.kind],
+    icon: EFFECT_ICON[effect.kind],
+    label: pillLabel(effect),
+  }));

@@ -1,7 +1,8 @@
 // Roster plus the host's Start control. Start lives here rather than on the
 // display because the display accepts no input (spec.md's "Display client").
 
-import type { PublicSeat } from '@card-game/shared'
+import type { PublicSeat } from '@card-game/shared';
+import { CLASS_COLORS, CLASS_NAMES } from '../deckTheme';
 import {
   colors,
   disabledButton,
@@ -9,19 +10,19 @@ import {
   gutter,
   primaryButton,
   screen,
-} from './styles'
-import { claimedSeats, MAX_SEATS, MIN_PLAYERS } from './tableRules'
+} from './styles';
+import { claimedSeats, MAX_SEATS, MIN_PLAYERS } from './tableRules';
 
 export interface LobbyProps {
-  seats: PublicSeat[]
-  isHost: boolean
-  error: string | null
-  onStart: () => void
+  seats: PublicSeat[];
+  isHost: boolean;
+  error: string | null;
+  onStart: () => void;
 }
 
 export function Lobby({ seats, isHost, error, onStart }: LobbyProps) {
-  const claimed = claimedSeats(seats)
-  const canStart = claimed.length >= MIN_PLAYERS
+  const claimed = claimedSeats(seats);
+  const canStart = claimed.length >= MIN_PLAYERS;
 
   return (
     <div style={screen}>
@@ -45,10 +46,30 @@ export function Lobby({ seats, isHost, error, onStart }: LobbyProps) {
           {claimed.map((seat) => (
             <div
               key={seat.seatId}
-              style={{ padding: 10, background: colors.panel, borderRadius: 8 }}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                padding: 10,
+                background: colors.panel,
+                borderRadius: 8,
+                borderLeft: `4px solid ${seat.deckId ? CLASS_COLORS[seat.deckId] : colors.border}`,
+              }}
             >
               <span>{seat.name}</span>
               {seat.isHost && <span> 👑</span>}
+              {seat.deckId && (
+                <span
+                  style={{
+                    marginLeft: 'auto',
+                    fontSize: 12,
+                    fontWeight: 700,
+                    color: CLASS_COLORS[seat.deckId],
+                  }}
+                >
+                  {CLASS_NAMES[seat.deckId]}
+                </span>
+              )}
             </div>
           ))}
         </div>
@@ -77,5 +98,5 @@ export function Lobby({ seats, isHost, error, onStart }: LobbyProps) {
         {error && <p style={{ ...errorText, marginTop: 12 }}>{error}</p>}
       </div>
     </div>
-  )
+  );
 }

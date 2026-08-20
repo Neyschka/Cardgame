@@ -1,53 +1,44 @@
-import { describe, expect, it } from 'vitest'
-import { cardLabel, illegalReason, typeIcon } from './cards'
+import { describe, expect, it } from 'vitest';
+import type { HandCard } from '@card-game/shared';
+import { ACTION_COLORS, effectPills } from './cards';
 
-describe('cardLabel', () => {
-  it('includes the value when a card has one', () => {
-    expect(cardLabel({ id: 'c1', type: 'Attack', value: 3, legal: true })).toBe(
-      'Attack 3',
-    )
-  })
+const card = (
+  over: Partial<HandCard> & { effects: HandCard['effects'] },
+): HandCard => ({
+  id: 'c1',
+  defId: 'x',
+  name: 'X',
+  playAgain: false,
+  needsTarget: false,
+  ...over,
+});
 
-  it('omits the value for a Defense card, which has none', () => {
-    expect(cardLabel({ id: 'c2', type: 'Defense', legal: true })).toBe(
-      'Defense',
-    )
-  })
-})
+describe('effectPills', () => {
+  it('renders one pill per effect, in card order', () => {
+    const pills = effectPills(
+      card({
+        effects: [
+          { kind: 'attack', value: 1, target: 'single' },
+          { kind: 'heal', value: 1, target: 'single' },
+        ],
+      }),
+    );
 
-describe('illegalReason', () => {
-  // The server decides legality and sends only the boolean, so the one-line
-  // reason the grid shows is re-derived here from the card's type. These
-  // strings match `server/src/gameState.ts`'s `illegalReason`.
-  it('explains a dead Defense card', () => {
-    expect(illegalReason({ id: 'c1', type: 'Defense', legal: false })).toBe(
-      'already shielded',
-    )
-  })
+    expect(pills).toEqual([
+      { kind: 'attack', color: ACTION_COLORS.attack, icon: '⚔️', label: '1' },
+      { kind: 'heal', color: ACTION_COLORS.heal, icon: '➕', label: '1' },
+    ]);
+  });
 
-  it('explains a dead Heal card', () => {
-    expect(
-      illegalReason({ id: 'c2', type: 'Heal', value: 2, legal: false }),
-    ).toBe('already at full HP')
-  })
+  it('marks an all-target effect in its label', () => {
+    const [pill] = effectPills(
+      card({ effects: [{ kind: 'attack', value: 2, target: 'all' }] }),
+    );
 
-  it('explains a dead Attack', () => {
-    expect(
-      illegalReason({ id: 'c3', type: 'Attack', value: 1, legal: false }),
-    ).toBe('no living opponents')
-  })
+    expect(pill?.label).toBe('2 all');
+  });
 
-  it('gives no reason for a legal card', () => {
-    expect(
-      illegalReason({ id: 'c4', type: 'Heal', value: 2, legal: true }),
-    ).toBeNull()
-  })
-})
-
-describe('typeIcon', () => {
-  it('has an icon for every card type', () => {
-    expect([typeIcon('Attack'), typeIcon('Defense'), typeIcon('Heal')]).toEqual(
-      ['⚔️', '🛡️', '➕'],
-    )
-  })
-})
+  it('colors strip apart from shield — a destroyed shield must not read as a gained one', () => {
+    expect(ACTION_COLORS.strip).not.toBe(ACTION_COLORS.shield);
+  });
+});
