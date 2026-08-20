@@ -1,35 +1,52 @@
-// Wire-contract types only — no logic. See `.scratch/card-game/spec.md`'s
-// "Wire protocol" section; `server/src/gameState.ts` holds the richer internal
-// state that never crosses the wire.
+// Wire-contract types only — no logic. Rules source of truth is
+// `docs/game-mechanics.md` (rewritten): 1 card per turn, 3-card hand,
+// numeric shields, combined effects.
 
 /** Path the display client reads its server-injected room code + LAN address
  *  from, per spec.md's "Join / reconnect" — nobody types a room code into the
  *  display. Shared so the client's fetch and the server's route can't drift. */
 export const DISPLAY_CONFIG_PATH = '/display-config'
 
-export type CardType = 'Attack' | 'Defense' | 'Heal'
+export type EffectKind = 'attack' | 'shield' | 'heal' | 'draw' | 'strip'
+
+// attack, strip: 'single' = chosen opponent, 'all' = every living opponent.
+// shield, heal, draw: always resolve on the player who played the card.
+export type TargetMode = 'single' | 'all'
+
+export interface CardEffect {
+  kind: EffectKind
+  value: number
+  target: TargetMode
+}
+
+export type DeckId = 'red' | 'green' | 'blue' | 'yellow'
 
 export interface HandCard {
-  id: string
-  type: CardType
-  value?: number // absent for Defense
-  legal: boolean // per game-mechanics.md's legal-play conditions
+  id: string // instance id, unique within this hand
+  defId: string // card definition id — also the art filename
+  name: string
+  effects: CardEffect[]
+  playAgain: boolean
+  needsTarget: boolean // any effect with target 'single' and kind attack|strip
 }
 
 export interface PublicSeat {
   seatId: string
   name: string | null // null = open, unclaimed
+  deckId: DeckId | null // random on join; null only for unclaimed seats
   isHost: boolean
   hp: number
-  shielded: boolean
+  shields: number // 0..MAX_SHIELDS, each point absorbs 1 damage
   eliminated: boolean
   handCount: number // count only — contents are private, see `yourHand`
 }
 
 export type LastPlayed = {
-  type: CardType
-  value?: number
+  defId: string
+  name: string
+  effects: CardEffect[]
   bySeatId: string
+  targetSeatId: string | null
 } | null
 
 export type MatchResult = { winnerSeatId: string } | { draw: true }
@@ -40,8 +57,9 @@ export interface PublicTableState {
   phase: 'lobby' | 'inMatch' | 'matchOver'
   seats: PublicSeat[]
   turnSeatId: string | null // null in lobby/matchOver
+  chainCount: number // consecutive playAgain plays this turn, 0 normally
   lastPlayed: LastPlayed
-  eliminationOrder: string[] // seatIds, in the order they were eliminated
+  eliminationOrder: string[] // seatIds, in elimination order
   matchResult: MatchResult | null // set once phase === 'matchOver'
 }
 

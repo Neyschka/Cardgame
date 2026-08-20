@@ -7,7 +7,7 @@
 
 import type {
   ActionResult,
-  CardType,
+  DeckId,
   HandCard,
   JoinResult,
   LastPlayed,
@@ -15,55 +15,47 @@ import type {
   PublicSeat,
   PublicTableState,
 } from '@card-game/shared'
+import { buildDeck, DECKS, type CardDef } from './cards'
+import {
+  autoTarget,
+  HAND_SIZE,
+  MAX_CHAIN,
+  needsTarget,
+  resolveCard,
+  STARTING_HP,
+  validatePlay,
+} from './resolve'
 
 const SEAT_COUNT = 4
 const MIN_PLAYERS = 2
-const STARTING_HP = 10
-const MAX_HP = 10
-const HAND_SIZE = 5
-const HEAL_AMOUNT = 2
+const DECK_IDS: DeckId[] = ['red', 'green', 'blue', 'yellow']
+
+/** Every card definition, keyed by id, across all four decks — the lookup a
+ *  drawn defId goes through to become a dealt `HandCard`. */
+const CARD_BY_ID = new Map<string, CardDef>()
+for (const deck of Object.values(DECKS)) {
+  for (const def of deck) CARD_BY_ID.set(def.id, def)
+}
 
 /** A disconnected seat is eliminated (mid-match) or reopened (between matches)
  *  once it has been gone this long — spec.md's "Reconnect & idle-timeout". */
 export const DISCONNECT_TIMEOUT_MS = 60_000
 
-export interface Card {
-  id: string
-  type: CardType
-  value?: number
-}
-
-/** Every deck is the same 15 cards: 8 Attack (3×1, 3×2, 2×3), 4 Defense, 3 Heal. */
-const DECK_TEMPLATE: ReadonlyArray<Omit<Card, 'id'>> = [
-  { type: 'Attack', value: 1 },
-  { type: 'Attack', value: 1 },
-  { type: 'Attack', value: 1 },
-  { type: 'Attack', value: 2 },
-  { type: 'Attack', value: 2 },
-  { type: 'Attack', value: 2 },
-  { type: 'Attack', value: 3 },
-  { type: 'Attack', value: 3 },
-  { type: 'Defense' },
-  { type: 'Defense' },
-  { type: 'Defense' },
-  { type: 'Defense' },
-  { type: 'Heal', value: HEAL_AMOUNT },
-  { type: 'Heal', value: HEAL_AMOUNT },
-  { type: 'Heal', value: HEAL_AMOUNT },
-]
-
 /** Internal seat — richer than `PublicSeat`. Deck, discard, token, socket id and
- *  disconnect timestamp never cross the wire. */
+ *  disconnect timestamp never cross the wire. `drawPile`/`discard` hold card
+ *  *definition* ids; `hand` holds fully-formed `HandCard`s, matching the wire
+ *  shape so `handFor` is a plain copy. */
 interface Seat {
   seatId: string
   name: string | null
+  deckId: DeckId | null
   isHost: boolean
   hp: number
-  shielded: boolean
+  shields: number
   eliminated: boolean
-  hand: Card[]
-  deck: Card[]
-  discard: Card[]
+  hand: HandCard[]
+  drawPile: string[]
+  discard: string[]
   token: string | null
   socketId: string | null
   disconnectedAt: number | null
@@ -74,10 +66,11 @@ export interface TableOptions {
   lanAddress: string
   /** Injectable clock; only the disconnect timeout reads it. */
   now?: () => number
-  /** Injectable RNG, used to mint reconnect tokens and drive the shuffles. */
+  /** Injectable RNG, used to mint reconnect tokens, assign decks and drive the
+   *  shuffles. */
   random?: () => number
   /** Deck-order seam — tests inject a fixed order for deterministic hands. */
-  shuffleDeck?: (cards: Card[]) => Card[]
+  shuffleDeck?: (cards: string[]) => string[]
   /** Turn-order seam — same reason. */
   shuffleTurnOrder?: (seatIds: string[]) => string[]
 }
@@ -113,7 +106,7 @@ export interface Table {
 export function createTable(options: TableOptions): Table {
   const now = options.now ?? (() => Date.now())
   const random = options.random ?? Math.random
-  const shuffleDeck = options.shuffleDeck ?? makeShuffle<Card>(random)
+  const shuffleDeck = options.shuffleDeck ?? makeShuffle<string>(random)
   const shuffleTurnOrder = options.shuffleTurnOrder ?? makeShuffle<string>(random)
 
   let nextCardId = 0
@@ -123,6 +116,7 @@ export function createTable(options: TableOptions): Table {
     seats: buildSeats(),
     turnOrder: [] as string[],
     turnSeatId: null as string | null,
+    chainCount: 0,
     lastPlayed: null as LastPlayed,
     eliminationOrder: [] as string[],
     matchResult: null as MatchResult | null,
@@ -157,25 +151,28 @@ export function createTable(options: TableOptions): Table {
 
   function clearCards(seat: Seat) {
     seat.hand = []
-    seat.deck = []
+    seat.drawPile = []
     seat.discard = []
   }
 
-  /** Everything about a seat's play, minus who is sitting in it. */
+  /** Everything about a seat's play, minus who is sitting in it and which deck
+   *  they were dealt — that's a join-time assignment, not a per-match reset. */
   function resetPlay(seat: Seat) {
     seat.hp = STARTING_HP
-    seat.shielded = false
+    seat.shields = 0
     seat.eliminated = false
     clearCards(seat)
   }
 
-  /** Wipes a seat back to an open slot. Its cards, token and host flag go too. */
+  /** Wipes a seat back to an open slot. Its cards, token, deck and host flag go
+   *  too — the freed deck becomes available to the next joiner. */
   function vacate(seat: Seat) {
     seat.name = null
     seat.isHost = false
     seat.token = null
     seat.socketId = null
     seat.disconnectedAt = null
+    seat.deckId = null
     resetPlay(seat)
   }
 
@@ -198,6 +195,20 @@ export function createTable(options: TableOptions): Table {
     if (!abandoned) return undefined
     vacate(abandoned)
     return abandoned
+  }
+
+  /** One of the four class decks, picked uniformly from whichever aren't
+   *  already held by an occupied seat. With `SEAT_COUNT === DECK_IDS.length`
+   *  there is always exactly one free deck for a seat that can still be
+   *  claimed. No deck-select UI — this is the only place a deck is chosen. */
+  function randomDeckId(): DeckId {
+    const held = new Set(
+      state.seats
+        .filter((seat) => isOccupied(seat) && seat.deckId !== null)
+        .map((seat) => seat.deckId),
+    )
+    const available = DECK_IDS.filter((id) => !held.has(id))
+    return available[Math.floor(random() * available.length)]!
   }
 
   /** Seat-scoped so two seats can never end up holding the same token, however
@@ -227,44 +238,41 @@ export function createTable(options: TableOptions): Table {
 
   // --- cards --------------------------------------------------------------
 
-  function buildDeck(seatId: string): Card[] {
-    return DECK_TEMPLATE.map((card) => ({
-      ...card,
-      id: `${seatId}-c${nextCardId++}`,
-    }))
+  function toHandCard(defId: string): HandCard {
+    const def = CARD_BY_ID.get(defId)
+    if (!def) throw new Error(`unknown card def ${defId}`)
+    return {
+      id: `c${nextCardId++}`,
+      defId: def.id,
+      name: def.name,
+      effects: def.effects,
+      playAgain: !!def.playAgain,
+      needsTarget: needsTarget(def.effects),
+    }
+  }
+
+  /** Draws exactly one card, reshuffling the discard into a fresh draw pile if
+   *  the seat's is empty. A no-op once both piles are empty. Also handed to
+   *  `resolveCard` as its `drawCard` seam, so a `draw` effect's own loop calls
+   *  this once per point of draw. */
+  function drawOne(seat: Pick<Seat, 'hand' | 'drawPile' | 'discard'>) {
+    if (seat.drawPile.length === 0) {
+      if (seat.discard.length === 0) return
+      seat.drawPile = shuffleDeck(seat.discard)
+      seat.discard = []
+    }
+    const defId = seat.drawPile.shift()
+    if (!defId) return
+    seat.hand.push(toHandCard(defId))
   }
 
   function drawUpTo(seat: Seat, size: number) {
     while (seat.hand.length < size) {
-      if (seat.deck.length === 0) {
-        if (seat.discard.length === 0) return
-        // Draw pile empty: the seat's own discard pile becomes the new one.
-        seat.deck = shuffleDeck(seat.discard)
-        seat.discard = []
-      }
-      const card = seat.deck.shift()
-      if (!card) return
-      seat.hand.push(card)
+      const before = seat.hand.length
+      drawOne(seat)
+      if (seat.hand.length === before) return
     }
   }
-
-  /** Null when the card is playable; otherwise the reason it's a dead card.
-   *  Mirrors game-mechanics.md's "Legal play conditions" — turn ownership is a
-   *  separate check, so a dead card reads the same on and off your turn. */
-  function illegalReason(seat: Seat, card: Card): string | null {
-    if (card.type === 'Heal' && seat.hp >= MAX_HP) return 'already at full HP'
-    if (card.type === 'Defense' && seat.shielded) return 'already shielded'
-    if (
-      card.type === 'Attack' &&
-      !livingSeats().some((other) => other.seatId !== seat.seatId)
-    ) {
-      return 'no living opponents'
-    }
-    return null
-  }
-
-  const hasLegalPlay = (seat: Seat) =>
-    seat.hand.some((card) => illegalReason(seat, card) === null)
 
   // --- turns --------------------------------------------------------------
 
@@ -283,15 +291,14 @@ export function createTable(options: TableOptions): Table {
   /** Hands the turn to a seat, auto-passing straight through disconnected seats
    *  — an instant "no legal plays" turn, draw step included (spec.md's
    *  "Reconnect & idle-timeout"). Bounded by one lap: if every living seat is
-   *  disconnected the turn parks until the 60s timeouts resolve the match. */
+   *  disconnected the turn parks until the 60s timeouts resolve the match.
+   *  Shields no longer expire here — they persist until stripped or spent. */
   function enterTurn(seatId: string) {
     let current: string | null = seatId
     for (let hop = 0; hop < state.turnOrder.length && current !== null; hop++) {
       const seat = seatById(current)
       if (!seat) return
       state.turnSeatId = seat.seatId
-      // An unused shield expires at the start of that seat's next turn.
-      seat.shielded = false
       if (seat.socketId !== null) return
       drawUpTo(seat, HAND_SIZE)
       const next = nextLivingSeatId(seat.seatId)
@@ -300,7 +307,7 @@ export function createTable(options: TableOptions): Table {
   }
 
   function endTurn(seat: Seat) {
-    // Refill only what was actually played this turn; dead cards stay put.
+    state.chainCount = 0
     drawUpTo(seat, HAND_SIZE)
     const next = nextLivingSeatId(seat.seatId)
     if (next === null) {
@@ -312,12 +319,13 @@ export function createTable(options: TableOptions): Table {
 
   // --- elimination & match end -------------------------------------------
 
-  /** The system's one elimination mechanism: 0 HP and the 60s timeout both land
-   *  here. Deck, hand and discard leave play; the seat is skipped from now on. */
+  /** Finishes a seat's elimination: `eliminated` may already be true (damage
+   *  resolution sets it as part of applying a hit) — this is what only
+   *  `gameState.ts` owns, cards/discard/token concerns aside. Deck, hand and
+   *  discard leave play; the seat is skipped from now on. */
   function eliminate(seat: Seat) {
-    if (seat.eliminated) return
     seat.eliminated = true
-    seat.shielded = false
+    seat.shields = 0
     clearCards(seat)
     state.eliminationOrder.push(seat.seatId)
   }
@@ -351,13 +359,18 @@ export function createTable(options: TableOptions): Table {
     reassignHost()
     for (const seat of participants) {
       resetPlay(seat)
-      seat.deck = shuffleDeck(buildDeck(seat.seatId))
+      // Assigned at join, never reassigned mid-table — a rematch keeps every
+      // still-seated player's class; only a freshly (re)joined seat got a new
+      // one from `randomDeckId`.
+      const deckId = seat.deckId!
+      seat.drawPile = shuffleDeck(buildDeck(DECKS[deckId]))
       drawUpTo(seat, HAND_SIZE)
     }
     state.phase = 'inMatch'
     state.lastPlayed = null
     state.eliminationOrder = []
     state.matchResult = null
+    state.chainCount = 0
     state.turnOrder = shuffleTurnOrder(participants.map((seat) => seat.seatId))
     const [first] = state.turnOrder
     if (first) enterTurn(first)
@@ -369,9 +382,10 @@ export function createTable(options: TableOptions): Table {
   const toPublicSeat = (seat: Seat): PublicSeat => ({
     seatId: seat.seatId,
     name: seat.name,
+    deckId: seat.deckId,
     isHost: seat.isHost,
     hp: seat.hp,
-    shielded: seat.shielded,
+    shields: seat.shields,
     eliminated: seat.eliminated,
     handCount: seat.hand.length,
   })
@@ -386,7 +400,8 @@ export function createTable(options: TableOptions): Table {
           (seat) => seat.token === token && isOccupied(seat),
         )
         if (claimed) {
-          // Reclaim: the supplied name is ignored, the seat keeps its own.
+          // Reclaim: the supplied name is ignored, the seat keeps its own —
+          // and its deck, since only `vacate` ever clears `deckId`.
           bind(claimed, socketId)
           return { ok: true, seatId: claimed.seatId, token }
         }
@@ -400,6 +415,7 @@ export function createTable(options: TableOptions): Table {
       const seat = claimableSeat()
       if (!seat) return { ok: false, reason: 'table full' }
       seat.name = trimmed
+      seat.deckId = randomDeckId()
       seat.token = mintToken(seat.seatId)
       bind(seat, socketId)
       reassignHost()
@@ -444,50 +460,40 @@ export function createTable(options: TableOptions): Table {
       if (state.turnSeatId !== seat.seatId) {
         return { ok: false, reason: 'not your turn' }
       }
-      const index = seat.hand.findIndex((card) => card.id === cardId)
-      const card = seat.hand[index]
+      const card = seat.hand.find((c) => c.id === cardId)
       if (!card) return { ok: false, reason: 'card not in hand' }
-      const illegal = illegalReason(seat, card)
-      if (illegal) return { ok: false, reason: illegal }
 
-      let target: Seat | undefined
-      if (card.type === 'Attack') {
-        if (!targetSeatId) return { ok: false, reason: 'attack needs a target' }
-        if (targetSeatId === seat.seatId) {
-          return { ok: false, reason: 'you cannot target yourself' }
-        }
-        target = seatById(targetSeatId)
-        if (!target || !isLiving(target)) {
-          return { ok: false, reason: 'invalid target' }
-        }
-      }
+      const targetId = targetSeatId ?? autoTarget(state.seats, seat.seatId)
+      const validation = validatePlay(card, targetId, state.seats, seat.seatId)
+      if (!validation.ok) return validation
 
-      seat.hand.splice(index, 1)
-      seat.discard.push(card)
+      seat.hand.splice(seat.hand.indexOf(card), 1)
+      seat.discard.push(card.defId)
 
-      if (card.type === 'Attack' && target) {
-        if (target.shielded) {
-          // Flat negate, whatever the attack's value, and the shield is spent.
-          target.shielded = false
-        } else {
-          target.hp = Math.max(0, target.hp - (card.value ?? 0))
-          if (target.hp === 0) eliminate(target)
-        }
-      } else if (card.type === 'Heal') {
-        seat.hp = Math.min(MAX_HP, seat.hp + (card.value ?? HEAL_AMOUNT))
-      } else {
-        seat.shielded = true
+      const events = resolveCard(card, seat.seatId, targetId, state.seats, drawOne)
+      for (const event of events) {
+        if (event.kind !== 'eliminated') continue
+        const victim = seatById(event.seatId)
+        if (victim) eliminate(victim)
       }
 
       state.lastPlayed = {
-        type: card.type,
-        value: card.value,
+        defId: card.defId,
+        name: card.name,
+        effects: card.effects,
         bySeatId: seat.seatId,
+        targetSeatId: targetId,
       }
 
-      // Play-until-can't: the turn only ends when no legal play is left. The
-      // wire contract has no `endTurn` event, so there is no "choose to stop".
-      if (!resolveMatchEnd() && !hasLegalPlay(seat)) endTurn(seat)
+      if (resolveMatchEnd()) return { ok: true }
+
+      // Every card is legal, and exactly one is played per turn — the only
+      // way the same seat keeps going is a `playAgain` card under the cap.
+      if (card.playAgain && state.chainCount < MAX_CHAIN) {
+        state.chainCount++
+      } else {
+        endTurn(seat)
+      }
       return { ok: true }
     },
 
@@ -528,6 +534,7 @@ export function createTable(options: TableOptions): Table {
           state.turnSeatId === null ? undefined : seatById(state.turnSeatId)
         if (!current || current.eliminated) {
           const next = nextLivingSeatId(state.turnSeatId ?? '')
+          state.chainCount = 0
           if (next === null) state.turnSeatId = null
           else enterTurn(next)
         }
@@ -542,6 +549,7 @@ export function createTable(options: TableOptions): Table {
         phase: state.phase,
         seats: state.seats.map(toPublicSeat),
         turnSeatId: state.turnSeatId,
+        chainCount: state.chainCount,
         lastPlayed: state.lastPlayed,
         eliminationOrder: [...state.eliminationOrder],
         matchResult: state.matchResult,
@@ -551,12 +559,7 @@ export function createTable(options: TableOptions): Table {
     handFor(seatId) {
       const seat = seatById(seatId)
       if (!seat) return []
-      return seat.hand.map((card) => ({
-        id: card.id,
-        type: card.type,
-        value: card.value,
-        legal: illegalReason(seat, card) === null,
-      }))
+      return [...seat.hand]
     },
 
     seatIdForSocket(socketId) {
@@ -579,12 +582,13 @@ function buildSeats(): Seat[] {
   return Array.from({ length: SEAT_COUNT }, (_unused, index) => ({
     seatId: `seat-${index + 1}`,
     name: null,
+    deckId: null,
     isHost: false,
     hp: STARTING_HP,
-    shielded: false,
+    shields: 0,
     eliminated: false,
     hand: [],
-    deck: [],
+    drawPile: [],
     discard: [],
     token: null,
     socketId: null,
