@@ -6,7 +6,6 @@ import type { CardEffect, HandCard } from '@card-game/shared';
 export const STARTING_HP = 10;
 export const HAND_SIZE = 3; // draw UP TO this; draw cards may exceed it
 export const MAX_SHIELDS = 4; // board art has four shield slots per seat
-export const MAX_CHAIN = 5; // hard cap on consecutive playAgain plays
 
 export interface CombatSeat {
   seatId: string;

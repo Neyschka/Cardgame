@@ -335,7 +335,7 @@ describe('playing a card', () => {
     expect(seatOf(table, 'seat-1').handCount).toBe(3);
   });
 
-  it('lets a playAgain card keep the turn, without refilling mid-chain, capped by MAX_CHAIN', () => {
+  it('lets a playAgain card keep the turn, without refilling mid-chain', () => {
     const { table } = setup(RED_CHAIN_OPENER); // kindle, kindle, flame_lash
     startedMatch(table, ['Ada', 'Bo']);
     expect(seatOf(table, 'seat-1').handCount).toBe(3);

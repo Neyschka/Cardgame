@@ -19,7 +19,6 @@ import { buildDeck, DECKS, type CardDef } from './cards';
 import {
   autoTarget,
   HAND_SIZE,
-  MAX_CHAIN,
   needsTarget,
   resolveCard,
   STARTING_HP,
@@ -497,8 +496,10 @@ export function createTable(options: TableOptions): Table {
       if (resolveMatchEnd()) return { ok: true };
 
       // Every card is legal, and exactly one is played per turn — the only
-      // way the same seat keeps going is a `playAgain` card under the cap.
-      if (card.playAgain && state.chainCount < MAX_CHAIN) {
+      // way the same seat keeps going is a `playAgain` card. Uncapped: a
+      // future draw+playAgain combo card should be able to chain as far as
+      // the deck allows, not hit an arbitrary wall.
+      if (card.playAgain) {
         state.chainCount++;
       } else {
         endTurn(seat);
