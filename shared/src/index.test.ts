@@ -1,6 +1,7 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest';
 import type {
   ActionResult,
+  CardEffect,
   ClientToServerEvents,
   HandCard,
   JoinResult,
@@ -8,7 +9,7 @@ import type {
   PublicSeat,
   PublicTableState,
   ServerToClientEvents,
-} from './index'
+} from './index';
 
 // This package is types-only — there is no runtime logic to test. These cases
 // exist as compile-time conformance checks on the wire contract: they fail
@@ -20,70 +21,98 @@ const lobby: PublicTableState = {
   phase: 'lobby',
   seats: [],
   turnSeatId: null,
+  chainCount: 0,
   lastPlayed: null,
   eliminationOrder: [],
   matchResult: null,
-}
+};
 
 const seat: PublicSeat = {
   seatId: 'seat-1',
   name: 'Ada',
+  deckId: 'red',
   isHost: true,
   hp: 10,
-  shielded: false,
+  shields: 0,
   eliminated: false,
-  handCount: 5,
-}
+  handCount: 3,
+};
+
+const attackEffect: CardEffect = { kind: 'attack', value: 2, target: 'single' };
 
 describe('wire contract', () => {
   it('accepts a full in-match table state', () => {
     const state = {
       ...lobby,
       phase: 'inMatch',
-      seats: [seat, { ...seat, seatId: 'seat-2', name: null, isHost: false }],
+      seats: [
+        seat,
+        { ...seat, seatId: 'seat-2', name: null, deckId: null, isHost: false },
+      ],
       turnSeatId: 'seat-1',
-      lastPlayed: { type: 'Attack', value: 3, bySeatId: 'seat-2' },
-    } satisfies PublicTableState
+      chainCount: 1,
+      lastPlayed: {
+        defId: 'ember_bolt',
+        name: 'Ember Bolt',
+        effects: [attackEffect],
+        bySeatId: 'seat-2',
+        targetSeatId: 'seat-1',
+      },
+    } satisfies PublicTableState;
 
-    expect(state.seats).toHaveLength(2)
-  })
+    expect(state.seats).toHaveLength(2);
+  });
 
-  it('models a Defense card with no value and an illegal play', () => {
+  it('models a card with combined effects and a playAgain flag', () => {
     const hand = [
-      { id: 'c1', type: 'Defense', legal: true },
-      { id: 'c2', type: 'Heal', value: 2, legal: false },
-    ] satisfies HandCard[]
+      {
+        id: 'c1',
+        defId: 'kindle',
+        name: 'Kindle',
+        effects: [attackEffect],
+        playAgain: true,
+        needsTarget: true,
+      },
+      {
+        id: 'c2',
+        defId: 'cinder_ward',
+        name: 'Cinder Ward',
+        effects: [{ kind: 'shield', value: 1, target: 'single' }],
+        playAgain: false,
+        needsTarget: false,
+      },
+    ] satisfies HandCard[];
 
-    expect(hand.filter((card) => card.legal)).toHaveLength(1)
-  })
+    expect(hand.filter((card) => card.playAgain)).toHaveLength(1);
+  });
 
   it('discriminates action and join results on `ok`', () => {
-    const rejected: ActionResult = { ok: false, reason: 'not your turn' }
-    const joined: JoinResult = { ok: true, seatId: 'seat-1', token: 'tok-abc' }
+    const rejected: ActionResult = { ok: false, reason: 'not your turn' };
+    const joined: JoinResult = { ok: true, seatId: 'seat-1', token: 'tok-abc' };
 
-    expect(rejected.ok ? null : rejected.reason).toBe('not your turn')
-    expect(joined.ok ? joined.seatId : null).toBe('seat-1')
-  })
+    expect(rejected.ok ? null : rejected.reason).toBe('not your turn');
+    expect(joined.ok ? joined.seatId : null).toBe('seat-1');
+  });
 
   it('models both match outcomes', () => {
-    const win = { winnerSeatId: 'seat-1' } satisfies MatchResult
-    const draw = { draw: true } satisfies MatchResult
+    const win = { winnerSeatId: 'seat-1' } satisfies MatchResult;
+    const draw = { draw: true } satisfies MatchResult;
 
-    expect('winnerSeatId' in win).toBe(true)
-    expect('draw' in draw).toBe(true)
-  })
+    expect('winnerSeatId' in win).toBe(true);
+    expect('draw' in draw).toBe(true);
+  });
 
   it('keeps card contents off the public seat shape', () => {
     // Fails to compile if a card-carrying field is ever added to `PublicSeat`,
     // which is the mechanism that keeps a hand out of a `tableState` broadcast.
-    type CardFieldNames = 'hand' | 'cards' | 'deck' | 'discard'
-    type LeakedFields = Extract<keyof PublicSeat, CardFieldNames>
-    type NoCardContents = [LeakedFields] extends [never] ? true : never
+    type CardFieldNames = 'hand' | 'cards' | 'deck' | 'discard';
+    type LeakedFields = Extract<keyof PublicSeat, CardFieldNames>;
+    type NoCardContents = [LeakedFields] extends [never] ? true : never;
 
-    const handsStayPrivate: NoCardContents = true
+    const handsStayPrivate: NoCardContents = true;
 
-    expect(handsStayPrivate).toBe(true)
-  })
+    expect(handsStayPrivate).toBe(true);
+  });
 
   it('pins the event signatures both directions', () => {
     // These handlers only have to type-check: an added, renamed or
@@ -91,7 +120,7 @@ describe('wire contract', () => {
     const serverToClient = {
       tableState: (state: PublicTableState) => void state.seats,
       yourHand: (hand: HandCard[]) => void hand.length,
-    } satisfies ServerToClientEvents
+    } satisfies ServerToClientEvents;
 
     const clientToServer = {
       join: ({ roomCode, name, token }, ack) =>
@@ -108,9 +137,9 @@ describe('wire contract', () => {
             : { ok: false, reason: `${cardId} needs a target` },
         ),
       newMatch: (ack) => ack({ ok: true }),
-    } satisfies ClientToServerEvents
+    } satisfies ClientToServerEvents;
 
-    expect(Object.keys(serverToClient)).toEqual(['tableState', 'yourHand'])
-    expect(Object.keys(clientToServer)).toHaveLength(5)
-  })
-})
+    expect(Object.keys(serverToClient)).toEqual(['tableState', 'yourHand']);
+    expect(Object.keys(clientToServer)).toHaveLength(5);
+  });
+});
