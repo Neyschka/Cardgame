@@ -14,16 +14,19 @@ describe('App', () => {
   it('opens on the player client, with no seat claimed yet', () => {
     render(<App socket={createFakeSocket().socket} />)
 
-    expect(screen.getByText('Join a table')).toBeTruthy()
+    expect(screen.getByText('Enter the code on the big screen')).toBeTruthy()
   })
 
   it('routes to the display client via ?display', () => {
     window.history.pushState({}, '', '/?display')
-    vi.stubGlobal('fetch', vi.fn(() => new Promise(() => {})))
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => new Promise(() => {})),
+    )
 
     render(<App socket={createFakeSocket().socket} />)
 
-    expect(screen.queryByText('Join a table')).toBeNull()
+    expect(screen.queryByText('Enter the code on the big screen')).toBeNull()
     expect(screen.getByText('Connecting…')).toBeTruthy()
   })
 })

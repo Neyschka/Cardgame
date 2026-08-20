@@ -23,6 +23,7 @@ import { Lobby } from './Lobby'
 import { InMatch } from './InMatch'
 import { Eliminated } from './Eliminated'
 import { MatchOver } from './MatchOver'
+import { ReconnectVeil } from './ReconnectVeil'
 import { centered, colors } from './styles'
 
 /** Taken from the wire contract rather than restated, so a change to `join`'s
@@ -34,6 +35,11 @@ export function PlayerClient({ socket }: { socket: GameSocket }) {
   const [hand, setHand] = useState<HandCard[]>([])
   const [seatId, setSeatId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+
+  // Set the instant this device's own socket drops, cleared the instant it
+  // reconnects — drives the reconnect veil. Independent of match phase: a
+  // disconnect can happen in the lobby too.
+  const [disconnectedAt, setDisconnectedAt] = useState<number | null>(null)
 
   const storedClaim = useRef<SeatClaim | null>(readSeatClaim())
   const [defaults, setDefaults] = useState({
@@ -93,19 +99,27 @@ export function PlayerClient({ socket }: { socket: GameSocket }) {
     // handing the token back — that is what makes a dropout survivable inside
     // the server's 60s window.
     const onConnect = () => {
+      setDisconnectedAt(null)
       const claim = storedClaim.current
       if (claim) claimSeat(claim)
+    }
+    // Only meaningful once a seat is held — the join screen has nothing to
+    // veil, and socket.io retries the transport on its own regardless.
+    const onDisconnect = () => {
+      if (heldSeat.current !== null) setDisconnectedAt(Date.now())
     }
 
     socket.on('tableState', onTableState)
     socket.on('yourHand', onHand)
     socket.on('connect', onConnect)
+    socket.on('disconnect', onDisconnect)
     if (socket.connected) onConnect()
 
     return () => {
       socket.off('tableState', onTableState)
       socket.off('yourHand', onHand)
       socket.off('connect', onConnect)
+      socket.off('disconnect', onDisconnect)
     }
   }, [socket, claimSeat])
 
@@ -134,67 +148,77 @@ export function PlayerClient({ socket }: { socket: GameSocket }) {
   const mySeat =
     table?.seats.find((candidate) => candidate.seatId === seatId) ?? null
 
-  if (seatId === null && !joining) {
+  function renderScreen() {
+    if (seatId === null && !joining) {
+      return (
+        <JoinScreen
+          defaults={defaults}
+          error={error}
+          busy={joining}
+          onJoin={(input) => claimSeat(input)}
+        />
+      )
+    }
+
+    if (!table || !mySeat) {
+      return (
+        <div style={centered}>
+          <p style={{ color: colors.mutedText }}>Connecting…</p>
+        </div>
+      )
+    }
+
+    if (table.phase === 'matchOver') {
+      return (
+        <MatchOver
+          seats={table.seats}
+          isHost={mySeat.isHost}
+          error={error}
+          onNewMatch={() => sendAction('newMatch')}
+        />
+      )
+    }
+
+    if (table.phase === 'lobby') {
+      return (
+        <Lobby
+          roomCode={table.roomCode}
+          seats={table.seats}
+          isHost={mySeat.isHost}
+          error={error}
+          onStart={() => sendAction('start')}
+        />
+      )
+    }
+
+    if (mySeat.eliminated) return <Eliminated />
+
+    const turnSeat = table.seats.find(
+      (candidate) => candidate.seatId === table.turnSeatId,
+    )
+
     return (
-      <JoinScreen
-        defaults={defaults}
+      <InMatch
+        mySeat={mySeat}
+        hand={hand}
+        isYourTurn={table.turnSeatId === mySeat.seatId}
+        turnName={turnSeat?.name ?? null}
+        opponents={table.seats.filter(
+          (candidate) =>
+            candidate.seatId !== mySeat.seatId && candidate.name !== null,
+        )}
         error={error}
-        busy={joining}
-        onJoin={(input) => claimSeat(input)}
+        onPlay={playCard}
       />
     )
   }
-
-  if (!table || !mySeat) {
-    return (
-      <div style={centered}>
-        <p style={{ color: colors.mutedText }}>Connecting…</p>
-      </div>
-    )
-  }
-
-  if (table.phase === 'matchOver') {
-    return (
-      <MatchOver
-        seats={table.seats}
-        isHost={mySeat.isHost}
-        error={error}
-        onNewMatch={() => sendAction('newMatch')}
-      />
-    )
-  }
-
-  if (table.phase === 'lobby') {
-    return (
-      <Lobby
-        seats={table.seats}
-        isHost={mySeat.isHost}
-        error={error}
-        onStart={() => sendAction('start')}
-      />
-    )
-  }
-
-  if (mySeat.eliminated) return <Eliminated />
-
-  const turnSeat = table.seats.find(
-    (candidate) => candidate.seatId === table.turnSeatId,
-  )
 
   return (
-    <InMatch
-      mySeat={mySeat}
-      hand={hand}
-      isYourTurn={table.turnSeatId === mySeat.seatId}
-      turnName={turnSeat?.name ?? null}
-      livingOpponents={table.seats.filter(
-        (candidate) =>
-          candidate.seatId !== mySeat.seatId &&
-          candidate.name !== null &&
-          !candidate.eliminated,
+    <>
+      {renderScreen()}
+      {disconnectedAt !== null && (
+        <ReconnectVeil disconnectedAt={disconnectedAt} />
       )}
-      error={error}
-      onPlay={playCard}
-    />
+    </>
   )
 }

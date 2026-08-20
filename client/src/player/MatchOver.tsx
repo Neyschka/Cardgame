@@ -8,6 +8,7 @@ import {
   disabledButton,
   errorText,
   primaryButton,
+  title,
 } from './styles'
 import { claimedSeats, MIN_PLAYERS } from './tableRules'
 import type { PublicSeat } from '@card-game/shared'
@@ -30,7 +31,7 @@ export function MatchOver({
   return (
     <div style={centered}>
       <div style={{ fontSize: 48 }}>🏁</div>
-      <h2 style={{ margin: 0 }}>Match over</h2>
+      <h2 style={{ ...title, margin: 0, fontSize: 26 }}>Match over</h2>
       <p style={{ color: colors.mutedText, margin: 0 }}>
         Check the shared screen for the result.
       </p>

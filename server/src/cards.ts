@@ -1,51 +1,51 @@
 // Card definitions. Pure data — `resolve.ts` walks `effects[]`.
 // `playAgain` is a card flag, not an effect: it changes turn flow, not state.
 
-import type { CardEffect, DeckId } from '@card-game/shared';
+import type { CardEffect, DeckId } from '@card-game/shared'
 
 export interface CardDef {
-  id: string; // also the art filename: `${id}.svg`
-  name: string;
-  deck: DeckId;
-  count: number;
-  effects: CardEffect[];
-  playAgain?: boolean; // after resolving, the same player takes another turn
-  flavour: string;
-  art: string;
+  id: string // also the art filename: `${id}.svg`
+  name: string
+  deck: DeckId
+  count: number
+  effects: CardEffect[]
+  playAgain?: boolean // after resolving, the same player takes another turn
+  flavour: string
+  art: string
 }
 
-export const DECK_SIZE = 15;
+export const DECK_SIZE = 15
 
 const dmg = (value: number): CardEffect => ({
   kind: 'attack',
   value,
   target: 'single',
-});
+})
 const all = (value: number): CardEffect => ({
   kind: 'attack',
   value,
   target: 'all',
-});
+})
 const shld = (value: number): CardEffect => ({
   kind: 'shield',
   value,
   target: 'single',
-});
+})
 const heal = (value: number): CardEffect => ({
   kind: 'heal',
   value,
   target: 'single',
-});
+})
 const draw = (value: number): CardEffect => ({
   kind: 'draw',
   value,
   target: 'single',
-});
+})
 const strip = (value: number): CardEffect => ({
   kind: 'strip',
   value,
   target: 'single',
-});
+})
 
 // ─────────────────────────────────────────────────────────────
 // RED — Pyromancer. Burst, sweeps, shield-breaking, chains.
@@ -132,7 +132,7 @@ export const RED_DECK: CardDef[] = [
     flavour: 'Cauterise and continue.',
     art: 'Glowing brand against a wound, gold sparks',
   },
-];
+]
 
 // ─────────────────────────────────────────────────────────────
 // GREEN — Sylvan Ranger. Consistent damage, card advantage, no dead draws.
@@ -218,7 +218,7 @@ export const GREEN_DECK: CardDef[] = [
     flavour: 'Slow, and certain.',
     art: 'Green shoot uncurling from a split seed',
   },
-];
+]
 
 // ─────────────────────────────────────────────────────────────
 // BLUE — Stormcaster. Heavy shields, chip damage, chains.
@@ -295,7 +295,7 @@ export const BLUE_DECK: CardDef[] = [
     flavour: 'The storm announces itself.',
     art: 'Eye opening within a swirl of cloud, twin lights',
   },
-];
+]
 
 // ─────────────────────────────────────────────────────────────
 // YELLOW — Sunwarden. Sustain, cleansing, small steady damage.
@@ -381,15 +381,15 @@ export const YELLOW_DECK: CardDef[] = [
     flavour: 'See clearly.',
     art: 'Shaft of light through parting cloud onto an open book',
   },
-];
+]
 
 export const DECKS: Record<DeckId, CardDef[]> = {
   red: RED_DECK,
   green: GREEN_DECK,
   blue: BLUE_DECK,
   yellow: YELLOW_DECK,
-};
+}
 
 export function buildDeck(defs: CardDef[]): string[] {
-  return defs.flatMap((c) => Array<string>(c.count).fill(c.id));
+  return defs.flatMap((c) => Array<string>(c.count).fill(c.id))
 }

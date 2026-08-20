@@ -1,24 +1,55 @@
-// Placeholder visuals only — no card art, per the v1 scope decision. Carried
-// over from the chosen prototype (issues/06 Variant C, issues/08) with the
-// prototype's phone bezel dropped: this runs full-screen on a real phone.
+// Design tokens and layout primitives for the player client. Palette,
+// gradients and type scale are ported from
+// `game-update/files/assets/phone-screens.html`'s CSS custom properties —
+// that file is the source of truth for the numbers below; this just makes
+// them usable from React.
 //
-// Sizing is phone-first and fluid: spacing and type scale with the viewport
-// between a 320px phone and a 520px cap, so nothing has to be zoomed or
-// side-scrolled. `--app-height` and the CSS reset come from index.html.
+// Layout mechanics (phone-first fluid sizing, safe-area insets, the
+// scroll/action-bar split) predate the theme and aren't part of it — kept
+// as-is.
 
 import type { CSSProperties } from 'react'
 
-export const colors = {
-  background: '#0b1220',
-  panel: '#1c2942',
-  deadPanel: '#1a1f2b',
-  border: '#33456e',
-  rule: '#232f4d',
-  text: '#eee',
-  mutedText: '#8fa3c9',
-  deadText: '#666',
-  accent: '#ffd166',
+/** The raw palette and type scale, unstyled — reach for these directly when
+ *  a component needs something the primitives below don't cover (e.g. a
+ *  one-off gold border on a card that tints by class). */
+export const tokens = {
+  void: '#07060f',
+  table1: '#3a2154',
+  table2: '#1f1236',
+  table3: '#0d0718',
+  panel: '#1b1030',
+  inset: '#120a22',
+  goldLt: '#f0d98a',
+  gold: '#c9a227',
+  goldDk: '#8a6a14',
+  goldHot: '#fde68a',
+  parchment: '#e4d5b8',
+  muted: '#a08f6f',
+  red: '#ef4444',
+  green: '#22c55e',
+  blue: '#3b82f6',
+  yellow: '#f59e0b',
+  fontDisplay: "'Cinzel', Georgia, serif",
+  fontBody: "'EB Garamond', Georgia, serif",
 } as const
+
+/** Kept for the handful of places that still want a flat swap-in palette
+ *  (error text, muted labels) rather than reaching into `tokens` directly. */
+export const colors = {
+  background: tokens.void,
+  panel: tokens.panel,
+  deadPanel: '#150c28',
+  border: tokens.goldDk,
+  rule: 'rgba(201,162,39,0.35)',
+  text: tokens.parchment,
+  mutedText: tokens.muted,
+  deadText: '#6b5f7d',
+  accent: tokens.goldLt,
+} as const
+
+/** The phone's backdrop — same radial wash on every screen. */
+export const tableGradient = `radial-gradient(120% 80% at 50% 30%, ${tokens.table1}, ${tokens.table2} 60%, ${tokens.table3})`
 
 /** Edge spacing, tight on a small phone and roomier on a big one. */
 export const gutter = 'clamp(14px, 4.5vw, 24px)'
@@ -40,9 +71,9 @@ export const screen: CSSProperties = {
   width: '100%',
   maxWidth: 520,
   margin: '0 auto',
-  background: colors.background,
+  background: tableGradient,
   color: colors.text,
-  fontFamily: 'sans-serif',
+  fontFamily: tokens.fontBody,
   display: 'flex',
   flexDirection: 'column',
   ...sideInsets,
@@ -70,7 +101,7 @@ export const actionBar: CSSProperties = {
   padding: gutter,
   paddingBottom: `calc(${gutter} + env(safe-area-inset-bottom))`,
   borderTop: `1px solid ${colors.rule}`,
-  background: colors.background,
+  background: 'transparent',
 }
 
 export const centered: CSSProperties = {
@@ -86,41 +117,95 @@ export const centered: CSSProperties = {
   paddingBottom: `calc(${gutter} + env(safe-area-inset-bottom))`,
 }
 
-export const input: CSSProperties = {
-  padding: 12,
-  minHeight: TAP_TARGET,
-  width: '100%',
-  borderRadius: 8,
-  border: `1px solid ${colors.border}`,
-  background: colors.panel,
-  color: colors.text,
-  // 16px or larger, or iOS zooms the page in on focus and never zooms back.
-  fontSize: 16,
+/** `.title` — Cinzel, bold, centred. The big heading at the top of a screen. */
+export const title: CSSProperties = {
+  fontFamily: tokens.fontDisplay,
+  fontSize: 'clamp(24px, 7vw, 30px)',
+  fontWeight: 700,
+  letterSpacing: 1,
+  textAlign: 'center',
+  margin: '14px 0 4px',
 }
 
-export const primaryButton: CSSProperties = {
-  padding: 14,
-  minHeight: TAP_TARGET,
-  borderRadius: 8,
+/** `.sub` — the muted line under a title. */
+export const subtitle: CSSProperties = {
+  fontSize: 'clamp(14px, 4vw, 17px)',
+  color: colors.mutedText,
+  textAlign: 'center',
+  marginBottom: 8,
+}
+
+/** `.label` — small tracked-out caption above a field or section. */
+export const label: CSSProperties = {
+  fontFamily: tokens.fontDisplay,
+  fontSize: 12,
+  letterSpacing: 4,
+  color: colors.mutedText,
+  textAlign: 'center',
+  marginBottom: 10,
+  textTransform: 'uppercase',
+}
+
+/** `.rule` — a thin gold-fade divider. */
+export const rule: CSSProperties = {
+  height: 1,
+  background: `linear-gradient(90deg, transparent, ${tokens.gold}, transparent)`,
+  opacity: 0.6,
+  margin: '18px 4px',
   border: 'none',
-  background: colors.accent,
-  color: '#1a1a1a',
+}
+
+export const input: CSSProperties = {
+  padding: '14px 16px',
+  minHeight: TAP_TARGET,
+  width: '100%',
+  boxSizing: 'border-box',
+  borderRadius: 10,
+  border: `2px solid ${tokens.goldDk}`,
+  background: tokens.inset,
+  color: colors.text,
+  fontFamily: tokens.fontBody,
+  // 16px or larger, or iOS zooms the page in on focus and never zooms back.
+  fontSize: 20,
+}
+
+/** `.btn` — the gold gradient call-to-action. */
+export const primaryButton: CSSProperties = {
+  padding: 18,
+  minHeight: TAP_TARGET,
+  borderRadius: 14,
+  border: 'none',
+  background: `linear-gradient(180deg, ${tokens.goldLt}, ${tokens.gold} 50%, ${tokens.goldDk})`,
+  boxShadow: '0 0 18px rgba(240,217,138,0.28)',
+  color: '#2a1a03',
+  fontFamily: tokens.fontDisplay,
   fontWeight: 700,
-  fontSize: 16,
+  fontSize: 17,
+  letterSpacing: 2,
   width: '100%',
   cursor: 'pointer',
 }
 
-/** Disabled controls stay visible and keep their label's reason — nothing in
- *  this client hides a control the player might expect to find. */
+/** `.btn.off` — disabled controls stay visible and keep their label's reason,
+ *  nothing in this client hides a control the player might expect to find. */
 export const disabledButton: CSSProperties = {
-  ...primaryButton,
-  opacity: 0.4,
+  padding: 18,
+  minHeight: TAP_TARGET,
+  borderRadius: 14,
+  border: `1.5px solid rgba(201,162,39,0.35)`,
+  background: colors.panel,
+  boxShadow: 'none',
+  color: colors.mutedText,
+  fontFamily: tokens.fontDisplay,
+  fontWeight: 700,
+  fontSize: 14,
+  letterSpacing: 1,
+  width: '100%',
   cursor: 'not-allowed',
 }
 
 export const errorText: CSSProperties = {
-  color: '#ff8f8f',
+  color: tokens.red,
   fontSize: 14,
   textAlign: 'center',
   margin: 0,

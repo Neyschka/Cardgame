@@ -40,7 +40,8 @@ export function DisplayApp({ socket }: { socket: GameSocket }) {
 
     connect().catch((error: unknown) => {
       if (cancelled) return
-      const reason = error instanceof Error ? error.message : 'connection failed'
+      const reason =
+        error instanceof Error ? error.message : 'connection failed'
       setState({ status: 'error', reason })
     })
 
@@ -51,7 +52,8 @@ export function DisplayApp({ socket }: { socket: GameSocket }) {
   }, [socket])
 
   if (state.status === 'connecting') return <StatusScreen text="Connecting…" />
-  if (state.status === 'error') return <StatusScreen text={`Couldn't connect: ${state.reason}`} />
+  if (state.status === 'error')
+    return <StatusScreen text={`Couldn't connect: ${state.reason}`} />
   return <RingTable table={state.table} />
 }
 

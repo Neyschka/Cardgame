@@ -1,5 +1,11 @@
 // Name + room code, per spec.md's "Player client". The only screen that takes
 // free text, and the only one shown before this client holds a seat.
+//
+// phone-screens.html's "1 · Join" mock shows the room code as four separate
+// gold-bordered boxes. Kept as a single field here instead — same visual
+// language (large, letter-spaced, gold border that lights up once there's
+// something in it), but one input rather than four keeps focus management
+// simple and the join flow's test coverage intact.
 
 import { useState } from 'react'
 import {
@@ -7,8 +13,13 @@ import {
   errorText,
   gutter,
   input,
+  label,
   primaryButton,
+  rule,
   screen,
+  subtitle,
+  title,
+  tokens,
 } from './styles'
 
 export interface JoinScreenProps {
@@ -33,7 +44,6 @@ export function JoinScreen({ defaults, error, busy, onJoin }: JoinScreenProps) {
           marginTop: 'min(60px, 8vh)',
           display: 'flex',
           flexDirection: 'column',
-          gap: 16,
         }}
         onSubmit={(event) => {
           event.preventDefault()
@@ -46,28 +56,46 @@ export function JoinScreen({ defaults, error, busy, onJoin }: JoinScreenProps) {
           })
         }}
       >
-        <h2 style={{ textAlign: 'center', margin: 0 }}>Join a table</h2>
+        <h1 style={title}>Card Game</h1>
+        <p style={subtitle}>Enter the code on the big screen</p>
+        <hr style={rule} />
+        <p style={label}>Room code</p>
+        <input
+          placeholder="Room code"
+          value={roomCode}
+          onChange={(event) => setRoomCode(event.target.value)}
+          autoCapitalize="characters"
+          style={{
+            ...input,
+            fontFamily: tokens.fontDisplay,
+            fontSize: 'clamp(24px, 8vw, 32px)',
+            fontWeight: 700,
+            letterSpacing: 8,
+            textAlign: 'center',
+            color: tokens.goldLt,
+            borderColor: roomCode.trim() ? tokens.goldLt : tokens.goldDk,
+            boxShadow: roomCode.trim()
+              ? '0 0 14px rgba(240,217,138,0.35)'
+              : 'none',
+          }}
+        />
+        <hr style={rule} />
+        <p style={label}>Your name</p>
         <input
           placeholder="Your name"
           value={name}
           onChange={(event) => setName(event.target.value)}
           style={input}
         />
-        <input
-          placeholder="Room code"
-          value={roomCode}
-          onChange={(event) => setRoomCode(event.target.value)}
-          autoCapitalize="characters"
-          style={{ ...input, letterSpacing: 4, textAlign: 'center' }}
-        />
+        <div style={{ flex: 1, minHeight: 24 }} />
         <button
           type="submit"
           disabled={!ready}
           style={ready ? primaryButton : disabledButton}
         >
-          Join
+          {busy ? 'Joining…' : 'Enter the Fray'}
         </button>
-        {error && <p style={errorText}>{error}</p>}
+        {error && <p style={{ ...errorText, marginTop: 12 }}>{error}</p>}
       </form>
     </div>
   )

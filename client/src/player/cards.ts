@@ -4,7 +4,7 @@
 // rules (`docs/game-mechanics.md`), so unlike the old `illegalReason` there is
 // nothing here to explain a dead card with.
 
-import type { CardEffect, EffectKind } from '@card-game/shared';
+import type { CardEffect, EffectKind } from '@card-game/shared'
 
 /** The card generator's `ACTION_COLORS` — kept in sync by hand since the art
  *  pack and this renderer are separate outputs of the same source. `strip` is
@@ -16,7 +16,7 @@ export const ACTION_COLORS: Record<EffectKind, string> = {
   heal: '#f472b6',
   draw: '#a78bfa',
   strip: '#fb923c',
-};
+}
 
 const EFFECT_ICON: Record<EffectKind, string> = {
   attack: '⚔️',
@@ -24,17 +24,17 @@ const EFFECT_ICON: Record<EffectKind, string> = {
   heal: '➕',
   draw: '🃏',
   strip: '🔻',
-};
+}
 
 export interface EffectPill {
-  kind: EffectKind;
-  color: string;
-  icon: string;
-  label: string;
+  kind: EffectKind
+  color: string
+  icon: string
+  label: string
 }
 
 const pillLabel = (effect: CardEffect): string =>
-  effect.target === 'all' ? `${effect.value} all` : `${effect.value}`;
+  effect.target === 'all' ? `${effect.value} all` : `${effect.value}`
 
 /** One pill per effect, in the order the card defines them — the stack a hand
  *  card (or the display's `lastPlayed`) renders as now that a card can do
@@ -46,4 +46,26 @@ export const effectPills = (card: { effects: CardEffect[] }): EffectPill[] =>
     color: ACTION_COLORS[effect.kind],
     icon: EFFECT_ICON[effect.kind],
     label: pillLabel(effect),
-  }));
+  }))
+
+const EFFECT_PHRASE: Record<
+  EffectKind,
+  (value: number, all: boolean) => string
+> = {
+  attack: (value, all) => `${value} damage${all ? ' to all' : ''}`,
+  shield: (value) => `+${value} shield`,
+  heal: (value) => `heal ${value}`,
+  draw: (value) => `draw ${value}`,
+  strip: (value) => `destroy ${value} shield${value === 1 ? '' : 's'}`,
+}
+
+/** The targeting screen's "chosen card" line, e.g. Shatter's strip(1)+dmg(2)
+ *  reads as "Destroy 1 shield, then 2 damage". */
+export function describeEffects(effects: CardEffect[]): string {
+  const sentence = effects
+    .map((effect) =>
+      EFFECT_PHRASE[effect.kind](effect.value, effect.target === 'all'),
+    )
+    .join(', then ')
+  return sentence.charAt(0).toUpperCase() + sentence.slice(1)
+}

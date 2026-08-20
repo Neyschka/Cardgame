@@ -26,6 +26,9 @@ export interface FakeSocket {
   lastSent(event: string): SentAction
   /** Fires the `connect` listeners, as socket.io does on a reconnect. */
   connect(): void
+  /** Fires the `disconnect` listeners, as socket.io does when the transport
+   *  drops. */
+  disconnect(): void
   serverEmit<E extends keyof ServerToClientEvents>(
     event: E,
     payload: E extends 'tableState' ? PublicTableState : HandCard[],
@@ -82,6 +85,9 @@ export function createFakeSocket(): FakeSocket {
     },
     connect() {
       fire('connect')
+    },
+    disconnect() {
+      fire('disconnect')
     },
     serverEmit(event, payload) {
       fire(event, payload)

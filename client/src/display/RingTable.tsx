@@ -3,12 +3,19 @@
 // Pure render of `PublicTableState` — no local game-state logic beyond the
 // attack-flash timer below, so the wire broadcast is the only thing that can
 // change what's on screen.
-import { useEffect, useState, type CSSProperties, type ReactNode } from 'react';
-import type { PublicSeat, PublicTableState } from '@card-game/shared';
-import { CLASS_COLORS } from '../deckTheme';
-import { effectPills } from '../player/cards';
+//
+// Palette/type match `player/styles.ts`'s tokens (ported from
+// `game-update/files/assets/phone-screens.html`); the backdrop is a direct
+// port of `game-update/files/assets/board-bg.svg` — small and purely
+// decorative, so reimplementing it as JSX is simpler than fetching and
+// tinting the asset file at runtime.
+import { useEffect, useState, type CSSProperties, type ReactNode } from 'react'
+import type { PublicSeat, PublicTableState } from '@card-game/shared'
+import { CLASS_COLORS } from '../deckTheme'
+import { effectPills } from '../player/cards'
+import { tokens } from '../player/styles'
 
-type Slot = 'N' | 'E' | 'S' | 'W';
+type Slot = 'N' | 'E' | 'S' | 'W'
 
 // Seats sit at fixed cardinal positions — 2/3/4 are the only possible counts,
 // since a match locks in with `gameState.ts`'s MIN_PLAYERS–SEAT_COUNT (2–4)
@@ -17,20 +24,20 @@ const SLOTS_BY_COUNT: Record<number, Slot[]> = {
   2: ['N', 'S'],
   3: ['N', 'E', 'S'],
   4: ['N', 'E', 'S', 'W'],
-};
+}
 
 const SLOT_STYLE: Record<Slot, CSSProperties> = {
   N: { top: 12, left: '50%', transform: 'translateX(-50%)' },
   S: { bottom: 12, left: '50%', transform: 'translateX(-50%)' },
   E: { right: 12, top: '50%', transform: 'translateY(-50%)' },
   W: { left: 12, top: '50%', transform: 'translateY(-50%)' },
-};
+}
 
 /** Fixed by docs/game-mechanics.md — HP never exceeds this. */
-const MAX_HP = 10;
+const MAX_HP = 10
 
 /** How long a just-attacked seat's border flashes. */
-const FLASH_MS = 600;
+const FLASH_MS = 600
 
 /** The seat a card's damage/strip just landed on, for `FLASH_MS` — cleared on
  *  unmount or the next `lastPlayed`, whichever comes first. `lastPlayed` is a
@@ -39,20 +46,20 @@ const FLASH_MS = 600;
 function useAttackFlash(
   lastPlayed: PublicTableState['lastPlayed'],
 ): string | null {
-  const [flashSeatId, setFlashSeatId] = useState<string | null>(null);
+  const [flashSeatId, setFlashSeatId] = useState<string | null>(null)
 
   useEffect(() => {
-    if (!lastPlayed?.targetSeatId) return;
-    setFlashSeatId(lastPlayed.targetSeatId);
-    const timeout = setTimeout(() => setFlashSeatId(null), FLASH_MS);
-    return () => clearTimeout(timeout);
-  }, [lastPlayed]);
+    if (!lastPlayed?.targetSeatId) return
+    setFlashSeatId(lastPlayed.targetSeatId)
+    const timeout = setTimeout(() => setFlashSeatId(null), FLASH_MS)
+    return () => clearTimeout(timeout)
+  }, [lastPlayed])
 
-  return flashSeatId;
+  return flashSeatId
 }
 
 export function RingTable({ table }: { table: PublicTableState }) {
-  const flashSeatId = useAttackFlash(table.lastPlayed);
+  const flashSeatId = useAttackFlash(table.lastPlayed)
 
   // Lobby shows every seat (open ones included) so newcomers see where to
   // join; once a match locks in its roster, an unclaimed seat never played
@@ -60,33 +67,58 @@ export function RingTable({ table }: { table: PublicTableState }) {
   const seatsToShow =
     table.phase === 'lobby'
       ? table.seats
-      : table.seats.filter((seat) => seat.name !== null);
-  const slots = SLOTS_BY_COUNT[seatsToShow.length]!;
+      : table.seats.filter((seat) => seat.name !== null)
+  const slots = SLOTS_BY_COUNT[seatsToShow.length]!
   const nameFor = (seatId: string) =>
-    table.seats.find((seat) => seat.seatId === seatId)?.name ?? seatId;
+    table.seats.find((seat) => seat.seatId === seatId)?.name ?? seatId
   const winnerSeatId =
     table.matchResult && 'winnerSeatId' in table.matchResult
       ? table.matchResult.winnerSeatId
-      : null;
+      : null
 
   return (
     <div
       data-testid="ring-table"
       style={{
-        fontFamily: 'sans-serif',
-        color: '#eee',
-        background: '#0b1220',
+        position: 'relative',
+        fontFamily: tokens.fontBody,
+        color: tokens.parchment,
+        background: tokens.void,
         minHeight: '100vh',
         padding: 24,
+        overflow: 'hidden',
       }}
     >
-      <header style={{ textAlign: 'center', marginBottom: 24 }}>
-        <h1 style={{ margin: 0 }}>Card Game</h1>
+      <BoardBackdrop />
+
+      <header
+        style={{ position: 'relative', textAlign: 'center', marginBottom: 24 }}
+      >
+        <h1
+          style={{
+            margin: 0,
+            fontFamily: tokens.fontDisplay,
+            fontSize: 40,
+            fontWeight: 700,
+            color: tokens.parchment,
+          }}
+        >
+          Card Game
+        </h1>
         {table.phase === 'lobby' && (
-          <p style={{ fontSize: 20 }}>
+          <p
+            style={{
+              fontSize: 20,
+              color: tokens.muted,
+              fontFamily: tokens.fontBody,
+            }}
+          >
             Room code{' '}
-            <strong style={{ letterSpacing: 4 }}>{table.roomCode}</strong> —
-            join at <code>{table.lanAddress}</code>
+            <strong style={{ letterSpacing: 4, color: tokens.goldLt }}>
+              {table.roomCode}
+            </strong>{' '}
+            — join at{' '}
+            <code style={{ color: tokens.parchment }}>{table.lanAddress}</code>
           </p>
         )}
       </header>
@@ -106,11 +138,11 @@ export function RingTable({ table }: { table: PublicTableState }) {
         />
 
         {seatsToShow.map((seat, index) => {
-          const slot = slots[index]!;
+          const slot = slots[index]!
           const highlighted =
             table.phase === 'matchOver'
               ? seat.seatId === winnerSeatId
-              : seat.seatId === table.turnSeatId;
+              : seat.seatId === table.turnSeatId
           return (
             <SeatBox
               key={seat.seatId}
@@ -120,11 +152,109 @@ export function RingTable({ table }: { table: PublicTableState }) {
               flashed={seat.seatId === flashSeatId}
               showLiveDetails={table.phase !== 'lobby'}
             />
-          );
+          )
         })}
       </div>
     </div>
-  );
+  )
+}
+
+/** Ported from `board-bg.svg` — violet radial table, gold trim, corner
+ *  flourishes, a centre play-area frame. Fixed behind everything else. */
+function BoardBackdrop() {
+  return (
+    <svg
+      viewBox="0 0 1920 1080"
+      preserveAspectRatio="xMidYMid slice"
+      style={{
+        position: 'absolute',
+        inset: 0,
+        width: '100%',
+        height: '100%',
+        zIndex: 0,
+      }}
+    >
+      <defs>
+        <radialGradient id="rt-table" cx="50%" cy="50%" r="62%">
+          <stop offset="0%" stopColor={tokens.table1} />
+          <stop offset="55%" stopColor={tokens.table2} />
+          <stop offset="100%" stopColor={tokens.table3} />
+        </radialGradient>
+        <radialGradient id="rt-glow" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor={tokens.gold} stopOpacity={0.22} />
+          <stop offset="100%" stopColor={tokens.gold} stopOpacity={0} />
+        </radialGradient>
+        <linearGradient id="rt-gold" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={tokens.goldLt} />
+          <stop offset="50%" stopColor={tokens.gold} />
+          <stop offset="100%" stopColor={tokens.goldDk} />
+        </linearGradient>
+      </defs>
+
+      <rect width={1920} height={1080} fill={tokens.void} />
+      <rect
+        x={24}
+        y={24}
+        width={1872}
+        height={1032}
+        rx={32}
+        fill="url(#rt-table)"
+      />
+      <ellipse cx={960} cy={540} rx={620} ry={420} fill="url(#rt-glow)" />
+
+      <rect
+        x={24}
+        y={24}
+        width={1872}
+        height={1032}
+        rx={32}
+        fill="none"
+        stroke="url(#rt-gold)"
+        strokeWidth={3}
+        opacity={0.85}
+      />
+      <rect
+        x={44}
+        y={44}
+        width={1832}
+        height={992}
+        rx={24}
+        fill="none"
+        stroke={tokens.gold}
+        strokeWidth={1}
+        opacity={0.3}
+      />
+
+      <g opacity={0.9}>
+        <rect
+          x={600}
+          y={330}
+          width={720}
+          height={420}
+          rx={20}
+          fill="#2a1a44"
+          fillOpacity={0.75}
+        />
+        <rect
+          x={600}
+          y={330}
+          width={720}
+          height={420}
+          rx={20}
+          fill="none"
+          stroke="url(#rt-gold)"
+          strokeWidth={2.5}
+        />
+      </g>
+
+      <g stroke="url(#rt-gold)" strokeWidth={2} fill="none" opacity={0.7}>
+        <path d="M92 92h72M92 92v72M92 92l26 26" />
+        <path d="M1828 92h-72M1828 92v72M1828 92l-26 26" />
+        <path d="M92 988h72M92 988v-72M92 988l26-26" />
+        <path d="M1828 988h-72M1828 988v-72M1828 988l-26-26" />
+      </g>
+    </svg>
+  )
 }
 
 function CenterRegion({
@@ -132,26 +262,26 @@ function CenterRegion({
   nameFor,
   winnerSeatId,
 }: {
-  table: PublicTableState;
-  nameFor: (seatId: string) => string;
-  winnerSeatId: string | null;
+  table: PublicTableState
+  nameFor: (seatId: string) => string
+  winnerSeatId: string | null
 }) {
   if (table.phase === 'lobby') {
-    const joined = table.seats.filter((seat) => seat.name !== null).length;
+    const joined = table.seats.filter((seat) => seat.name !== null).length
     return (
       <Circle>
         {joined}/{table.seats.length} joined
       </Circle>
-    );
+    )
   }
 
   if (table.phase === 'matchOver') {
-    const result = table.matchResult!;
-    const isDraw = 'draw' in result;
+    const result = table.matchResult!
+    const isDraw = 'draw' in result
     const chain = [
       ...table.eliminationOrder,
       ...(winnerSeatId ? [winnerSeatId] : []),
-    ].map(nameFor);
+    ].map(nameFor)
 
     return (
       <div
@@ -164,38 +294,45 @@ function CenterRegion({
           width: 300,
           padding: 24,
           borderRadius: 16,
-          background: '#16213a',
-          border: '2px solid #ffd166',
+          background: tokens.panel,
+          border: `2px solid ${tokens.goldLt}`,
           textAlign: 'center',
-          boxShadow: '0 0 30px rgba(255,209,102,0.35)',
+          boxShadow: '0 0 30px rgba(240,217,138,0.35)',
         }}
       >
         <div style={{ fontSize: 40 }}>{isDraw ? '🤝' : '🏆'}</div>
-        <div style={{ fontSize: 24, fontWeight: 700, marginTop: 4 }}>
+        <div
+          style={{
+            fontFamily: tokens.fontDisplay,
+            fontSize: 24,
+            fontWeight: 700,
+            marginTop: 4,
+          }}
+        >
           {isDraw ? 'Draw!' : `${nameFor(result.winnerSeatId)} wins!`}
         </div>
-        <div style={{ marginTop: 16, fontSize: 13, color: '#8fa3c9' }}>
+        <div style={{ marginTop: 16, fontSize: 13, color: tokens.muted }}>
           {chain.map((name, index) => (
             <span key={index}>
               {index > 0 && ' → '}
               {!isDraw && index === chain.length - 1 ? (
-                <strong style={{ color: '#ffd166' }}>{name}</strong>
+                <strong style={{ color: tokens.goldLt }}>{name}</strong>
               ) : (
                 name
               )}
             </span>
           ))}
         </div>
-        <div style={{ marginTop: 16, fontSize: 12, color: '#5a6b8c' }}>
+        <div style={{ marginTop: 16, fontSize: 12, color: tokens.muted }}>
           Waiting for the host to start a new match…
         </div>
       </div>
-    );
+    )
   }
 
   // inMatch
-  if (!table.lastPlayed) return <Circle>no card played yet</Circle>;
-  const { name, effects, bySeatId } = table.lastPlayed;
+  if (!table.lastPlayed) return <Circle>no card played yet</Circle>
+  const { name, effects, bySeatId } = table.lastPlayed
   return (
     <Circle>
       <div
@@ -213,7 +350,15 @@ function CenterRegion({
           boxShadow: '0 6px 20px rgba(0,0,0,0.5)',
         }}
       >
-        <div style={{ fontWeight: 700, textAlign: 'center' }}>{name}</div>
+        <div
+          style={{
+            fontFamily: tokens.fontDisplay,
+            fontWeight: 700,
+            textAlign: 'center',
+          }}
+        >
+          {name}
+        </div>
         <div
           style={{
             display: 'flex',
@@ -227,6 +372,7 @@ function CenterRegion({
             <span
               key={index}
               style={{
+                fontFamily: tokens.fontDisplay,
                 fontSize: 11,
                 fontWeight: 700,
                 padding: '2px 6px',
@@ -245,7 +391,7 @@ function CenterRegion({
         </div>
       </div>
     </Circle>
-  );
+  )
 }
 
 function Circle({ children }: { children: ReactNode }) {
@@ -259,19 +405,20 @@ function Circle({ children }: { children: ReactNode }) {
         width: 260,
         height: 260,
         borderRadius: '50%',
-        background: '#16213a',
-        border: '2px solid #2c3e63',
+        background: tokens.panel,
+        border: `2px solid ${tokens.goldDk}`,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         textAlign: 'center',
+        fontFamily: tokens.fontDisplay,
         fontSize: 14,
-        color: '#8fa3c9',
+        color: tokens.muted,
       }}
     >
       {children}
     </div>
-  );
+  )
 }
 
 function CardBack() {
@@ -281,13 +428,12 @@ function CardBack() {
         width: 20,
         height: 28,
         borderRadius: 3,
-        background:
-          'repeating-linear-gradient(45deg, #3a4a7a, #3a4a7a 3px, #2c3968 3px, #2c3968 6px)',
-        border: '1px solid #1a2340',
+        background: `repeating-linear-gradient(45deg, ${tokens.goldDk}, ${tokens.goldDk} 3px, ${tokens.inset} 3px, ${tokens.inset} 6px)`,
+        border: `1px solid ${tokens.gold}`,
         marginLeft: -8,
       }}
     />
-  );
+  )
 }
 
 function SeatBox({
@@ -297,14 +443,19 @@ function SeatBox({
   flashed,
   showLiveDetails,
 }: {
-  seat: PublicSeat;
-  slot: Slot;
-  highlighted: boolean;
-  flashed: boolean;
-  showLiveDetails: boolean;
+  seat: PublicSeat
+  slot: Slot
+  highlighted: boolean
+  flashed: boolean
+  showLiveDetails: boolean
 }) {
-  const showDetails = seat.name !== null && showLiveDetails && !seat.eliminated;
-  const classColor = seat.deckId ? CLASS_COLORS[seat.deckId] : undefined;
+  const showDetails = seat.name !== null && showLiveDetails && !seat.eliminated
+  const classColor = seat.deckId ? CLASS_COLORS[seat.deckId] : tokens.goldDk
+  // A lighter red than tokens.red/CLASS_COLORS.red (#ef4444) on purpose — a
+  // red-deck seat's own border is already that color, so the flash needs its
+  // own shade to still read as "just hit" rather than disappearing into it.
+  const FLASH_COLOR = '#f87171'
+  const borderColor = flashed ? FLASH_COLOR : classColor
 
   return (
     <div
@@ -313,18 +464,18 @@ function SeatBox({
     >
       <div
         style={{
-          width: 190,
+          width: 200,
           padding: 12,
-          borderRadius: 10,
-          background: seat.eliminated ? '#1a1f2b' : '#1c2942',
-          borderTop: `1px solid ${flashed ? '#f87171' : '#33456e'}`,
-          borderRight: `1px solid ${flashed ? '#f87171' : '#33456e'}`,
-          borderBottom: `1px solid ${flashed ? '#f87171' : '#33456e'}`,
-          borderLeft: `4px solid ${flashed ? '#f87171' : (classColor ?? '#33456e')}`,
-          outline: highlighted ? '2px solid #ffd166' : 'none',
+          borderRadius: 12,
+          background: seat.eliminated ? tokens.inset : tokens.panel,
+          borderTop: `2px solid ${borderColor}`,
+          borderRight: `2px solid ${borderColor}`,
+          borderBottom: `2px solid ${borderColor}`,
+          borderLeft: `5px solid ${borderColor}`,
+          outline: highlighted ? `2px solid ${tokens.goldLt}` : 'none',
           opacity: seat.eliminated ? 0.5 : 1,
           boxShadow: highlighted
-            ? '0 0 16px rgba(255,209,102,0.5)'
+            ? '0 0 16px rgba(240,217,138,0.5)'
             : flashed
               ? '0 0 16px rgba(248,113,113,0.6)'
               : 'none',
@@ -334,38 +485,40 @@ function SeatBox({
         <div
           style={{
             display: 'flex',
+            alignItems: 'center',
             justifyContent: 'space-between',
             fontSize: 14,
           }}
         >
-          <strong>
+          <strong style={{ fontFamily: tokens.fontDisplay }}>
             <span>
-              {seat.name ?? <em style={{ color: '#5a6b8c' }}>open seat</em>}
+              {seat.name ?? <em style={{ color: tokens.muted }}>open seat</em>}
             </span>
             {seat.isHost && seat.name && <span> 👑</span>}
           </strong>
-          {seat.eliminated && <span style={{ color: '#ff6b6b' }}>OUT</span>}
+          {seat.eliminated && <span style={{ color: tokens.red }}>OUT</span>}
         </div>
         {showDetails && (
           <>
             <div
               style={{
-                background: '#0b1220',
+                background: tokens.inset,
                 borderRadius: 4,
                 height: 8,
                 marginTop: 6,
+                border: `1px solid ${tokens.goldDk}`,
               }}
             >
               <div
                 style={{
                   width: `${(seat.hp / MAX_HP) * 100}%`,
-                  background: seat.hp > 3 ? '#4caf50' : '#e63946',
+                  background: tokens.red,
                   height: '100%',
-                  borderRadius: 4,
+                  borderRadius: 3,
                 }}
               />
             </div>
-            <div style={{ fontSize: 12, marginTop: 4, color: '#8fa3c9' }}>
+            <div style={{ fontSize: 12, marginTop: 4, color: tokens.muted }}>
               {seat.hp} HP{seat.shields > 0 && ` · ${seat.shields}🛡️`}
             </div>
           </>
@@ -387,5 +540,5 @@ function SeatBox({
         </div>
       )}
     </div>
-  );
+  )
 }
