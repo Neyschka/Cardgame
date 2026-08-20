@@ -1,0 +1,5 @@
+# LAN-only deployment: single origin, single table per instance
+
+We're building for a LAN-party setup — one TV/monitor, one host machine, players' own phones on the same wifi — not internet-reachable hosting. The server process therefore also serves the built client (one origin, one port), so there's nothing else to deploy or point phones at beyond that machine's LAN IP. Phones reach it by typing `<host-ip>:<port>` plus a room code; we rejected mDNS hostnames (extra OS-level setup, unreliable across phone OSes) and a separately-hosted static client (no benefit for a single-machine LAN game, extra moving parts).
+
+One server instance hosts exactly one table — no multi-tenant table routing. The room code is therefore a lightweight seat-claim gate (and later, reconnect-matching key), not an identifier for choosing between tables. Reversing either choice (multi-table routing, or splitting client/server origins for internet hosting) is a real rework of the join flow and room-code semantics, not a config flip — worth recording so it isn't "fixed" by accident later.

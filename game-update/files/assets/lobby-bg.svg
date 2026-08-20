@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" width="1920" height="1080">
+  <defs>
+    <radialGradient id="ltable" cx="50%" cy="42%" r="66%">
+      <stop offset="0%" stop-color="#3a2154"/><stop offset="55%" stop-color="#1f1236"/><stop offset="100%" stop-color="#0d0718"/>
+    </radialGradient>
+    <linearGradient id="lgold" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#f0d98a"/><stop offset="50%" stop-color="#c9a227"/><stop offset="100%" stop-color="#8a6a14"/>
+    </linearGradient>
+    <radialGradient id="lglow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#c9a227" stop-opacity="0.2"/><stop offset="100%" stop-color="#c9a227" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="1920" height="1080" fill="#07060f"/>
+  <rect x="24" y="24" width="1872" height="1032" rx="32" fill="url(#ltable)"/>
+  <ellipse cx="960" cy="300" rx="700" ry="300" fill="url(#lglow)"/>
+  <rect x="24" y="24" width="1872" height="1032" rx="32" fill="none" stroke="url(#lgold)" stroke-width="3" opacity="0.85"/>
+  <rect x="44" y="44" width="1832" height="992" rx="24" fill="none" stroke="#c9a227" stroke-width="1" opacity="0.3"/>
+
+  <text x="960" y="150" font-family="Cinzel Decorative, Cinzel, Georgia, serif" font-size="58" font-weight="700" fill="#e4d5b8" text-anchor="middle">Gather Your Party</text>
+
+  <g stroke="url(#lgold)" stroke-width="2" fill="none" opacity="0.8">
+    <path d="M560 178h300"/><path d="M1060 178h300"/>
+  </g>
+  <g fill="#c9a227" opacity="0.85">
+    <path d="M960 168l10 10-10 10-10-10z"/>
+    <path d="M920 178l7 7-7 7-7-7z" opacity="0.6"/>
+    <path d="M1000 178l7 7-7 7-7-7z" opacity="0.6"/>
+  </g>
+
+  <text x="960" y="1010" font-family="EB Garamond, Georgia, serif" font-size="30" fill="#a08f6f" text-anchor="middle">Open the game on your phone and enter the code above</text>
+
+  <g stroke="url(#lgold)" stroke-width="2" fill="none" opacity="0.7">
+    <path d="M92 92h72M92 92v72M92 92l26 26"/>
+    <path d="M1828 92h-72M1828 92v72M1828 92l-26 26"/>
+    <path d="M92 988h72M92 988v-72M92 988l26-26"/>
+    <path d="M1828 988h-72M1828 988v-72M1828 988l-26-26"/>
+  </g>
+</svg>

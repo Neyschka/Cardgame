@@ -1,0 +1,11 @@
+{
+  "extends": "../tsconfig.base.json",
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "lib": ["ES2022", "DOM"],
+    // Both halves run in the same process here: the real server (node) and the
+    // real clients (DOM), which is the whole point of this workspace.
+    "types": ["node"]
+  },
+  "include": ["src"]
+}

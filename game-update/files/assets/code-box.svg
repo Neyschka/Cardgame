@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 68 84" width="68" height="84">
+  <defs><linearGradient id="cbg" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0%" stop-color="#f0d98a"/><stop offset="100%" stop-color="#8a6a14"/></linearGradient></defs>
+  <rect x="2" y="2" width="64" height="80" rx="10" fill="#120a22" stroke="url(#cbg)" stroke-width="2"/>
+</svg>

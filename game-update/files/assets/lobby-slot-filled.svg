@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 380 480" width="380" height="480" color="#ef4444">
+  <defs>
+    <linearGradient id="sgold" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#f0d98a"/><stop offset="100%" stop-color="#8a6a14"/>
+    </linearGradient>
+  </defs>
+
+  <rect x="4" y="4" width="372" height="472" rx="18" fill="#1b1030"/>
+  <rect id="slot-tint" x="4" y="4" width="372" height="472" rx="18" fill="currentColor" opacity="0.2"/>
+  <rect id="slot-edge" x="4" y="4" width="372" height="472" rx="18" fill="none" stroke="currentColor" stroke-width="3.5"/>
+  <rect x="14" y="14" width="352" height="452" rx="12" fill="none" stroke="url(#sgold)" stroke-width="1.2" opacity="0.7"/>
+
+  <circle id="portrait" cx="190" cy="196" r="84" fill="#120a22" stroke="url(#sgold)" stroke-width="2.5"/>
+  <path d="M190 160a28 28 0 1 1 0 56 28 28 0 0 1 0-56M144 256a46 46 0 0 1 92 0" fill="none" stroke="currentColor" stroke-width="3.5" opacity="0.85"/>
+
+  <rect id="nameplate" x="44" y="322" width="292" height="52" rx="10" fill="#120a22" stroke="currentColor" stroke-width="1.8"/>
+  <text x="190" y="357" font-family="Cinzel, Georgia, serif" font-size="26" font-weight="600" fill="#e4d5b8" text-anchor="middle">Mark</text>
+
+  <text id="classname" x="190" y="412" font-family="EB Garamond, Georgia, serif" font-size="24" fill="#c9a227" text-anchor="middle">Pyromancer</text>
+  <text id="ready" x="190" y="450" font-family="Cinzel, Georgia, serif" font-size="18" letter-spacing="4" fill="#86efac" text-anchor="middle">READY</text>
+</svg>

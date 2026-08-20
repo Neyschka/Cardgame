@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 200" width="720" height="200">
+  <defs>
+    <linearGradient id="rgold" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#f0d98a"/><stop offset="50%" stop-color="#c9a227"/><stop offset="100%" stop-color="#8a6a14"/>
+    </linearGradient>
+    <filter id="rglow" x="-25%" y="-25%" width="150%" height="150%">
+      <feGaussianBlur stdDeviation="8" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <rect x="8" y="8" width="704" height="184" rx="18" fill="#1b1030"/>
+  <rect x="8" y="8" width="704" height="184" rx="18" fill="none" stroke="url(#rgold)" stroke-width="4" filter="url(#rglow)"/>
+  <rect x="20" y="20" width="680" height="160" rx="12" fill="none" stroke="#c9a227" stroke-width="1.2" opacity="0.5"/>
+
+  <text x="360" y="58" font-family="Cinzel, Georgia, serif" font-size="20" letter-spacing="7" fill="#a08f6f" text-anchor="middle">ROOM CODE</text>
+
+  <g id="code-slots" fill="#120a22" stroke="#c9a227" stroke-width="1.5" opacity="0.85">
+    <rect x="146" y="78" width="94" height="94" rx="10"/>
+    <rect x="256" y="78" width="94" height="94" rx="10"/>
+    <rect x="370" y="78" width="94" height="94" rx="10"/>
+    <rect x="480" y="78" width="94" height="94" rx="10"/>
+  </g>
+  <g id="code-text" font-family="Cinzel, Georgia, serif" font-size="62" font-weight="700" fill="#f0d98a" text-anchor="middle">
+    <text x="193" y="147">B</text><text x="303" y="147">L</text><text x="417" y="147">Z</text><text x="527" y="147">K</text>
+  </g>
+</svg>

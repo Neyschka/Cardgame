@@ -1,0 +1,60 @@
+---
+
+services:
+  claude:
+    image: 745136425148.dkr.ecr.eu-west-1.amazonaws.com/wondeltd/claude:latest
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    volumes:
+      - .:/workspace
+    networks:
+      - agent_net
+    environment:
+      ISOLATED_NET_SUBNET: "192.168.100.0/24"
+
+  install:
+    image: node:24-alpine
+    working_dir: /workspace
+    volumes:
+      - .:/workspace
+    command: npm install
+
+  server:
+    image: node:24-alpine
+    working_dir: /workspace
+    volumes:
+      - .:/workspace
+    networks:
+      - app_net
+    ports:
+      - "3001:3001"
+    environment:
+      PORT: "3001"
+    depends_on:
+      install:
+        condition: service_completed_successfully
+    command: npm run dev -w server
+
+  client:
+    image: node:24-alpine
+    working_dir: /workspace
+    volumes:
+      - .:/workspace
+    networks:
+      - app_net
+    ports:
+      - "5173:5173"
+    depends_on:
+      install:
+        condition: service_completed_successfully
+    command: npm run dev -w client
+
+networks:
+  agent_net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 192.168.101.0/24
+  app_net:
+    driver: bridge

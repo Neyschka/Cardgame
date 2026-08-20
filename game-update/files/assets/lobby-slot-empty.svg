@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 380 480" width="380" height="480">
+  <rect x="4" y="4" width="372" height="472" rx="18" fill="#150c28" fill-opacity="0.7"/>
+  <rect x="4" y="4" width="372" height="472" rx="18" fill="none" stroke="#c9a227" stroke-width="2.5" stroke-dasharray="12 10" opacity="0.45"/>
+
+  <circle cx="190" cy="196" r="76" fill="none" stroke="#c9a227" stroke-width="2" opacity="0.35"/>
+  <path d="M190 164a26 26 0 1 1 0 52 26 26 0 0 1 0-52M148 250a42 42 0 0 1 84 0" fill="none" stroke="#c9a227" stroke-width="3" opacity="0.35"/>
+
+  <text x="190" y="336" font-family="Cinzel, Georgia, serif" font-size="26" fill="#a08f6f" text-anchor="middle" opacity="0.8">Awaiting</text>
+  <text x="190" y="372" font-family="Cinzel, Georgia, serif" font-size="26" fill="#a08f6f" text-anchor="middle" opacity="0.8">a champion</text>
+
+  <g fill="#c9a227" opacity="0.5">
+    <circle cx="158" cy="416" r="7"/><circle cx="190" cy="416" r="7"/><circle cx="222" cy="416" r="7"/>
+  </g>
+</svg>

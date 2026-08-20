@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 358 64" width="358" height="64">
+  <defs>
+    <linearGradient id="tbg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#f0d98a"/><stop offset="50%" stop-color="#c9a227"/><stop offset="100%" stop-color="#8a6a14"/>
+    </linearGradient>
+    <filter id="tbglow" x="-20%" y="-40%" width="140%" height="180%">
+      <feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <rect x="4" y="4" width="350" height="56" rx="12" fill="url(#tbg)" filter="url(#tbglow)"/>
+  <text x="179" y="40" font-family="Cinzel, Georgia, serif" font-size="21" font-weight="700" letter-spacing="4" fill="#2a1a03" text-anchor="middle">YOUR TURN</text>
+</svg>

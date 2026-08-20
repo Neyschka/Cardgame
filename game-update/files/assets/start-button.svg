@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 340 96" width="340" height="96">
+  <defs>
+    <linearGradient id="bgold" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#f0d98a"/><stop offset="50%" stop-color="#c9a227"/><stop offset="100%" stop-color="#8a6a14"/>
+    </linearGradient>
+    <filter id="bglow" x="-25%" y="-40%" width="150%" height="180%">
+      <feGaussianBlur stdDeviation="5" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <rect x="6" y="6" width="328" height="84" rx="14" fill="url(#bgold)"/>
+  <rect x="6" y="6" width="328" height="84" rx="14" fill="none" stroke="#fde68a" stroke-width="2" filter="url(#bglow)"/>
+  <rect x="14" y="14" width="312" height="68" rx="9" fill="none" stroke="#7a5c10" stroke-width="1.2" opacity="0.6"/>
+  <text x="170" y="59" font-family="Cinzel, Georgia, serif" font-size="27" font-weight="700" letter-spacing="3" fill="#2a1a03" text-anchor="middle">BEGIN BATTLE</text>
+</svg>

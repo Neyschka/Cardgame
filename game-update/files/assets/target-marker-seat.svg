@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 660 200" width="660" height="200">
+  <defs>
+    <filter id="tmg" x="-20%" y="-25%" width="140%" height="150%">
+      <feGaussianBlur stdDeviation="5" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <g filter="url(#tmg)" fill="none" stroke="#f87171" stroke-width="4">
+    <rect x="10" y="10" width="640" height="180" rx="18"/>
+    <path d="M40 40h34M40 40v26M620 40h-34M620 40v26M40 160h34M40 160v-26M620 160h-34M620 160v-26"/>
+  </g>
+  <path d="M330 0l14 22h-28z" fill="#f87171"/>
+</svg>

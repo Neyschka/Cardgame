@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <!-- Phones are the player client's only real target. Without this, mobile
+         browsers lay the page out at ~980px and scale the result down, which is
+         why everything read tiny. `viewport-fit=cover` is what lets the
+         safe-area insets in src/player/styles.ts reach under a notch. -->
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <meta name="color-scheme" content="dark" />
+    <title>Card Game</title>
+    <style>
+      /* `dvh` tracks the *visible* viewport, so a browser bar sliding in can't
+         push the action bar below the fold. `vh` stays as the fallback. */
+      :root {
+        --app-height: 100vh;
+      }
+      @supports (height: 100dvh) {
+        :root {
+          --app-height: 100dvh;
+        }
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        /* Mirrors `colors.background` in src/player/styles.ts, so the page never
+           flashes white before React mounts. */
+        background: #0b1220;
+        -webkit-text-size-adjust: 100%;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

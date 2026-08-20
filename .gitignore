@@ -1,0 +1,13 @@
+node_modules/
+dist/
+.vite/
+*.log
+.env
+.tmp/
+
+# Raw archive — already extracted to cards/; not source.
+cards 2.zip
+
+# IDE- and machine-specific, not project config.
+.idea/
+.claude/settings.local.json

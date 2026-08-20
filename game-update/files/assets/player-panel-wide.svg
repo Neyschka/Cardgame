@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 180" width="640" height="180" color="#ef4444">
+  <defs>
+    <linearGradient id="goldW" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#f0d98a"/><stop offset="100%" stop-color="#8a6a14"/>
+    </linearGradient>
+  </defs>
+
+  <rect x="3" y="3" width="634" height="174" rx="16" fill="#1b1030"/>
+  <rect id="panel-tint" x="3" y="3" width="634" height="174" rx="16" fill="currentColor" opacity="0.18"/>
+  <rect id="panel-edge" x="3" y="3" width="634" height="174" rx="16" fill="none" stroke="currentColor" stroke-width="3"/>
+  <rect x="10" y="10" width="620" height="160" rx="11" fill="none" stroke="url(#goldW)" stroke-width="1.2" opacity="0.7"/>
+  <rect id="panel-accent" x="3" y="3" width="9" height="174" rx="4" fill="currentColor"/>
+
+  <rect id="portrait" x="28" y="26" width="128" height="128" rx="12" fill="#120a22" stroke="url(#goldW)" stroke-width="2"/>
+  <path d="M92 66a22 22 0 1 1 0 44 22 22 0 0 1 0-44M56 136a36 36 0 0 1 72 0" fill="none" stroke="currentColor" stroke-width="3" opacity="0.75"/>
+
+  <rect id="nameplate" x="176" y="26" width="240" height="38" rx="8" fill="#120a22" stroke="currentColor" stroke-width="1.5" opacity="0.95"/>
+  <text x="296" y="52" font-family="Cinzel, Georgia, serif" font-size="19" font-weight="600" fill="#e4d5b8" text-anchor="middle">Pyromancer</text>
+
+  <g id="hp">
+    <rect x="176" y="76" width="240" height="30" rx="15" fill="#120a22" stroke="url(#goldW)" stroke-width="2"/>
+    <rect id="hp-fill" x="181" y="81" width="160" height="20" rx="10" fill="currentColor"/>
+    <text x="296" y="98" font-family="Cinzel, Georgia, serif" font-size="16" font-weight="600" fill="#e4d5b8" text-anchor="middle">10 / 10</text>
+  </g>
+
+  <g id="shields">
+    <rect x="176" y="118" width="52" height="36" rx="8" fill="#120a22" stroke="#c9a227" stroke-width="1.5" stroke-dasharray="4 4" opacity="0.55"/>
+    <rect x="236" y="118" width="52" height="36" rx="8" fill="#120a22" stroke="#c9a227" stroke-width="1.5" stroke-dasharray="4 4" opacity="0.55"/>
+    <rect x="296" y="118" width="52" height="36" rx="8" fill="#120a22" stroke="#c9a227" stroke-width="1.5" stroke-dasharray="4 4" opacity="0.55"/>
+    <rect x="356" y="118" width="52" height="36" rx="8" fill="#120a22" stroke="#c9a227" stroke-width="1.5" stroke-dasharray="4 4" opacity="0.55"/>
+  </g>
+
+  <g id="deck">
+    <rect x="440" y="40" width="82" height="108" rx="10" fill="#120a22" stroke="url(#goldW)" stroke-width="2"/>
+    <rect x="452" y="54" width="58" height="80" rx="6" fill="currentColor" opacity="0.3"/>
+    <rect x="452" y="54" width="58" height="80" rx="6" fill="none" stroke="#c9a227" stroke-width="1" opacity="0.6"/>
+    <text x="481" y="167" font-family="Cinzel, Georgia, serif" font-size="12" fill="#c9a227" text-anchor="middle">DECK</text>
+  </g>
+  <g id="discard">
+    <rect x="536" y="40" width="82" height="108" rx="10" fill="#120a22" stroke="#c9a227" stroke-width="1.5" stroke-dasharray="5 5" opacity="0.6"/>
+    <text x="577" y="167" font-family="Cinzel, Georgia, serif" font-size="12" fill="#c9a227" text-anchor="middle">DISCARD</text>
+  </g>
+</svg>

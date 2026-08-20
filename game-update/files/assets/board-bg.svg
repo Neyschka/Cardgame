@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" width="1920" height="1080">
+  <defs>
+    <radialGradient id="table" cx="50%" cy="50%" r="62%">
+      <stop offset="0%" stop-color="#3a2154"/>
+      <stop offset="55%" stop-color="#1f1236"/>
+      <stop offset="100%" stop-color="#0d0718"/>
+    </radialGradient>
+    <radialGradient id="centreGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#c9a227" stop-opacity="0.22"/>
+      <stop offset="100%" stop-color="#c9a227" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#f0d98a"/>
+      <stop offset="50%" stop-color="#c9a227"/>
+      <stop offset="100%" stop-color="#8a6a14"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1920" height="1080" fill="#07060f"/>
+  <rect x="24" y="24" width="1872" height="1032" rx="32" fill="url(#table)"/>
+  <ellipse cx="960" cy="540" rx="620" ry="420" fill="url(#centreGlow)"/>
+
+  <rect x="24" y="24" width="1872" height="1032" rx="32" fill="none" stroke="url(#gold)" stroke-width="3" opacity="0.85"/>
+  <rect x="44" y="44" width="1832" height="992" rx="24" fill="none" stroke="#c9a227" stroke-width="1" opacity="0.3"/>
+
+  <g opacity="0.9">
+    <rect x="600" y="330" width="720" height="420" rx="20" fill="#2a1a44" fill-opacity="0.75"/>
+    <rect x="600" y="330" width="720" height="420" rx="20" fill="none" stroke="url(#gold)" stroke-width="2.5"/>
+    <rect x="618" y="348" width="684" height="384" rx="14" fill="none" stroke="#c9a227" stroke-width="1" stroke-dasharray="7 9" opacity="0.45"/>
+  </g>
+
+  <g fill="#c9a227" opacity="0.75">
+    <path d="M960 300l10 18h-20z"/>
+    <path d="M960 780l10-18h-20z"/>
+    <path d="M570 540l18 10v-20z"/>
+    <path d="M1350 540l-18 10v-20z"/>
+  </g>
+
+  <g stroke="url(#gold)" stroke-width="2" fill="none" opacity="0.7">
+    <path d="M92 92h72M92 92v72M92 92l26 26"/>
+    <path d="M1828 92h-72M1828 92v72M1828 92l-26 26"/>
+    <path d="M92 988h72M92 988v-72M92 988l26-26"/>
+    <path d="M1828 988h-72M1828 988v-72M1828 988l-26-26"/>
+  </g>
+</svg>

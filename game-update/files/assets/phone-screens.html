@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>Phone screens</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=EB+Garamond:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  /* ── Design tokens — lift these straight into the client ───────── */
+  :root {
+    --void:#07060f; --table-1:#3a2154; --table-2:#1f1236; --table-3:#0d0718;
+    --panel:#1b1030; --inset:#120a22;
+    --gold-lt:#f0d98a; --gold:#c9a227; --gold-dk:#8a6a14; --gold-hot:#fde68a;
+    --parchment:#e4d5b8; --muted:#a08f6f;
+    --red:#ef4444; --green:#22c55e; --blue:#3b82f6; --yellow:#f59e0b;
+    --font-display:'Cinzel',Georgia,serif; --font-body:'EB Garamond',Georgia,serif;
+  }
+  body { margin:0; background:#0a0812; color:var(--parchment); font-family:var(--font-body);
+         display:flex; gap:40px; padding:32px; flex-wrap:wrap; justify-content:center; }
+  .col { text-align:center; }
+  .col > h2 { font-family:var(--font-display); font-size:15px; font-weight:600;
+              letter-spacing:2px; color:var(--muted); margin:0 0 12px; text-transform:uppercase; }
+  .phone { width:390px; height:844px; border-radius:36px; overflow:hidden; position:relative;
+           background:radial-gradient(120% 80% at 50% 30%, var(--table-1), var(--table-2) 60%, var(--table-3));
+           border:1px solid #2a2140; display:flex; flex-direction:column; padding:28px 16px; box-sizing:border-box; }
+
+  .title { font-family:var(--font-display); font-size:30px; font-weight:700; letter-spacing:1px;
+           text-align:center; margin:14px 0 4px; }
+  .sub { font-size:17px; color:var(--muted); text-align:center; margin-bottom:26px; }
+  .rule { height:1px; background:linear-gradient(90deg,transparent,var(--gold),transparent);
+          opacity:.6; margin:18px 4px; }
+  .label { font-family:var(--font-display); font-size:12px; letter-spacing:4px;
+           color:var(--muted); text-align:center; margin-bottom:10px; }
+
+  /* code entry */
+  .code { display:flex; gap:12px; justify-content:center; }
+  .code i { width:68px; height:84px; border-radius:10px; background:var(--inset);
+            border:2px solid var(--gold-dk); display:flex; align-items:center; justify-content:center;
+            font-family:var(--font-display); font-size:40px; font-weight:700; font-style:normal;
+            color:var(--gold-lt); }
+  .code i.on { border-color:var(--gold-lt); box-shadow:0 0 14px rgba(240,217,138,.35); }
+  .field { background:var(--inset); border:2px solid var(--gold-dk); border-radius:10px;
+           padding:14px 16px; font-family:var(--font-body); font-size:20px; color:var(--parchment); }
+  .field.ph { color:#6b5f7d; }
+
+  .btn { border:none; border-radius:14px; padding:20px; font-family:var(--font-display);
+         font-size:19px; font-weight:700; letter-spacing:3px; color:#2a1a03;
+         background:linear-gradient(180deg,var(--gold-lt),var(--gold) 50%,var(--gold-dk));
+         box-shadow:0 0 18px rgba(240,217,138,.28); }
+  .btn.off { background:var(--panel); color:var(--muted); box-shadow:none;
+             border:1.5px solid rgba(201,162,39,.35); font-size:15px; letter-spacing:1px; }
+
+  /* lobby list */
+  .slot { display:flex; align-items:center; gap:14px; padding:14px; border-radius:14px;
+          background:var(--panel); border:2.5px solid var(--c,#3a3450); margin-bottom:12px; position:relative; }
+  .slot::before { content:''; position:absolute; inset:0; border-radius:11px; background:var(--c,transparent);
+                  opacity:.18; pointer-events:none; }
+  .slot.empty { background:rgba(21,12,40,.6); border:2.5px dashed rgba(201,162,39,.4); }
+  .av { width:54px; height:54px; border-radius:50%; background:var(--inset);
+        border:2px solid var(--gold-dk); flex:none; }
+  .who { text-align:left; z-index:1; }
+  .who b { font-family:var(--font-display); font-size:20px; font-weight:600; display:block; }
+  .who span { font-size:15px; color:var(--gold); }
+  .crown { margin-left:auto; font-size:22px; z-index:1; }
+  .waitdots { color:var(--muted); font-size:17px; }
+
+  /* hand screen */
+  .foes { display:flex; gap:8px; margin-bottom:6px; }
+  .foe { flex:1; border-radius:10px; padding:8px 4px; background:var(--panel);
+         border:2px solid var(--c); position:relative; font-size:13px; }
+  .foe::before { content:''; position:absolute; inset:0; border-radius:8px; background:var(--c); opacity:.16; }
+  .foe b { display:block; font-family:var(--font-display); font-size:15px; }
+  .foe.dead { opacity:.35; filter:grayscale(1); }
+  .banner { border-radius:12px; padding:16px; font-family:var(--font-display); font-weight:700;
+            letter-spacing:4px; font-size:19px; color:#2a1a03; text-align:center;
+            background:linear-gradient(180deg,var(--gold-lt),var(--gold) 50%,var(--gold-dk));
+            box-shadow:0 0 16px rgba(240,217,138,.3); margin:10px 0; }
+  .selfbar { display:flex; align-items:center; gap:10px; justify-content:center; margin:6px 0 4px; }
+  .hp { flex:1; height:30px; border-radius:15px; background:var(--inset);
+        border:2px solid var(--gold-dk); position:relative; overflow:hidden; }
+  .hp > i { position:absolute; inset:3px auto 3px 3px; width:62%; border-radius:11px;
+            background:var(--red); display:block; }
+  .hp > span { position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+               font-family:var(--font-display); font-size:15px; font-weight:600; }
+  .pips { display:flex; gap:5px; }
+  .pips i { width:22px; height:26px; border-radius:6px; background:var(--inset);
+            border:1.5px dashed rgba(201,162,39,.5); }
+  .pips i.on { background:#0f2a52; border:2px solid #60a5fa; }
+
+  .hand { display:flex; gap:10px; margin-top:auto; }
+  .card { flex:1; aspect-ratio:264/374; border-radius:14px; background:var(--panel);
+          border:3px solid var(--c); padding:10px 6px; box-sizing:border-box; position:relative;
+          display:flex; flex-direction:column; }
+  .card::before { content:''; position:absolute; inset:0; border-radius:11px; background:var(--c); opacity:.2; }
+  .card.sel { transform:translateY(-14px); box-shadow:0 0 20px rgba(240,217,138,.5); border-color:var(--gold-lt); }
+  .card h4 { font-family:var(--font-display); font-size:13.5px; font-weight:600; margin:0; z-index:1;
+             line-height:1.15; }
+  .art { flex:1; margin:8px 2px; border-radius:8px; background:var(--inset);
+         border:1px solid rgba(201,162,39,.45); z-index:1; }
+  .fx { display:flex; flex-direction:column; gap:4px; z-index:1; }
+  .fx span { font-family:var(--font-display); font-size:12px; font-weight:600; border-radius:6px;
+             padding:3px 5px; background:var(--inset); }
+  .fx .a { color:#f87171; } .fx .s { color:#60a5fa; } .fx .h { color:#f472b6; }
+  .fx .d { color:#a78bfa; } .fx .st { color:#fb923c; }
+  .hint { font-size:14px; color:var(--muted); text-align:center; margin-top:10px; }
+
+  /* targeting state */
+  .dim { opacity:.32; filter:saturate(.5); }
+  .chosen { border-radius:14px; border:3px solid var(--gold-lt); background:var(--panel);
+            box-shadow:0 0 24px rgba(240,217,138,.45); padding:12px 14px; display:flex;
+            align-items:center; gap:12px; position:relative; }
+  .chosen::before { content:''; position:absolute; inset:0; border-radius:11px;
+                    background:var(--red); opacity:.2; }
+  .chosen .mini { width:52px; height:74px; border-radius:8px; background:var(--inset);
+                  border:1px solid rgba(201,162,39,.5); flex:none; z-index:1; }
+  .chosen .info { text-align:left; z-index:1; }
+  .chosen .info b { font-family:var(--font-display); font-size:19px; display:block; }
+  .chosen .info span { font-size:14px; color:var(--muted); }
+  .prompt { font-family:var(--font-display); font-size:17px; font-weight:600; letter-spacing:3px;
+            color:var(--gold-hot); text-align:center; margin:20px 0 12px; }
+  .tgt { display:flex; align-items:center; gap:14px; padding:16px 14px; border-radius:14px;
+         background:var(--panel); border:3px solid var(--c); margin-bottom:12px; position:relative; }
+  .tgt::before { content:''; position:absolute; inset:0; border-radius:11px; background:var(--c); opacity:.2; }
+  .tgt.hot { border-color:var(--gold-lt); box-shadow:0 0 20px rgba(240,217,138,.4); }
+  .tgt .av { width:48px; height:48px; }
+  .tgt .who b { font-size:19px; }
+  .tgt .stat { margin-left:auto; z-index:1; font-family:var(--font-display); font-size:16px; }
+  .tgt .stat em { font-style:normal; color:#60a5fa; }
+  .reticle { margin-left:auto; z-index:1; }
+  .cancel { background:none; border:1.5px solid rgba(201,162,39,.45); color:var(--muted);
+            border-radius:12px; padding:14px; font-family:var(--font-display); font-size:14px;
+            letter-spacing:2px; }
+</style></head>
+<body>
+
+<!-- ─────────── 1. JOIN ─────────── -->
+<div class="col"><h2>1 · Join</h2>
+<div class="phone">
+  <div class="title">Dungeon<br>Mayhem</div>
+  <div class="sub">Enter the code on the big screen</div>
+  <div class="rule"></div>
+  <div class="label">ROOM CODE</div>
+  <div class="code"><i class="on">B</i><i class="on">L</i><i class="on">Z</i><i></i></div>
+  <div class="rule"></div>
+  <div class="label">YOUR NAME</div>
+  <div class="field ph">Tap to enter…</div>
+  <div style="flex:1"></div>
+  <button class="btn">ENTER THE FRAY</button>
+</div></div>
+
+<!-- ─────────── 2. WAITING ROOM ─────────── -->
+<div class="col"><h2>2 · Waiting room</h2>
+<div class="phone">
+  <div class="title" style="font-size:25px">Gather Your Party</div>
+  <div class="sub">Room <b style="color:var(--gold-lt)">BLZK</b> · 3 of 4 seated</div>
+  <div class="rule"></div>
+  <div class="slot" style="--c:var(--red)">
+    <div class="av"></div><div class="who"><b>Mark</b><span>Pyromancer</span></div>
+    <div class="crown">👑</div></div>
+  <div class="slot" style="--c:var(--green)">
+    <div class="av"></div><div class="who"><b>Priya</b><span>Sylvan Ranger</span></div></div>
+  <div class="slot" style="--c:var(--blue)">
+    <div class="av"></div><div class="who"><b>Marcus</b><span>Stormcaster</span></div></div>
+  <div class="slot empty">
+    <div class="av" style="opacity:.4"></div><div class="who"><span class="waitdots">Awaiting a champion…</span></div></div>
+  <div style="flex:1"></div>
+  <button class="btn">BEGIN BATTLE</button>
+  <div class="hint">You are the host — start when ready</div>
+</div></div>
+
+<!-- ─────────── 3. HAND ─────────── -->
+<div class="col"><h2>3 · Hand</h2>
+<div class="phone">
+  <div class="foes">
+    <div class="foe" style="--c:var(--green)"><b>Priya</b>8 ♥ · 2 🛡</div>
+    <div class="foe" style="--c:var(--blue)"><b>Marcus</b>4 ♥ · 4 🛡</div>
+    <div class="foe dead" style="--c:var(--yellow)"><b>Dana</b>OUT</div>
+  </div>
+  <div class="banner">YOUR TURN</div>
+  <div class="selfbar">
+    <div class="hp"><i></i><span>6 / 10</span></div>
+    <div class="pips"><i class="on"></i><i class="on"></i><i></i><i></i></div>
+  </div>
+  <div style="flex:1"></div>
+  <div class="hand">
+    <div class="card" style="--c:var(--red)"><h4>Shatter</h4><div class="art"></div>
+      <div class="fx"><span class="st">−1 🛡</span><span class="a">2 ⚔</span></div></div>
+    <div class="card" style="--c:var(--red)"><h4>Immolate</h4><div class="art"></div>
+      <div class="fx"><span class="a">4 ⚔</span></div></div>
+    <div class="card" style="--c:var(--red)"><h4>Searing Mend</h4><div class="art"></div>
+      <div class="fx"><span class="a">1 ⚔</span><span class="h">1 ♥</span></div></div>
+  </div>
+</div></div>
+
+<!-- ─────────── 4. TARGETING ─────────── -->
+<div class="col"><h2>4 · Choose a target</h2>
+<div class="phone">
+  <div class="foes dim">
+    <div class="foe" style="--c:var(--green)"><b>Priya</b>8 ♥ · 2 🛡</div>
+    <div class="foe" style="--c:var(--blue)"><b>Marcus</b>4 ♥ · 4 🛡</div>
+    <div class="foe dead" style="--c:var(--yellow)"><b>Dana</b>OUT</div>
+  </div>
+
+  <div class="chosen">
+    <div class="mini"></div>
+    <div class="info"><b>Shatter</b><span>Destroy 1 shield, then 2 damage</span></div>
+  </div>
+
+  <div class="prompt">CHOOSE A TARGET</div>
+
+  <div class="tgt hot" style="--c:var(--green)">
+    <div class="av"></div><div class="who"><b>Priya</b><span>Sylvan Ranger</span></div>
+    <div class="stat">8 ♥ · <em>2 🛡</em></div>
+  </div>
+  <div class="tgt" style="--c:var(--blue)">
+    <div class="av"></div><div class="who"><b>Marcus</b><span>Stormcaster</span></div>
+    <div class="stat">4 ♥ · <em>4 🛡</em></div>
+  </div>
+
+  <div style="flex:1"></div>
+  <button class="cancel">← CHOOSE A DIFFERENT CARD</button>
+</div></div>
+
+</body></html>
