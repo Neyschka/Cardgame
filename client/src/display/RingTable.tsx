@@ -11,6 +11,7 @@
 // tinting the asset file at runtime.
 import { useEffect, useState, type CSSProperties, type ReactNode } from 'react'
 import type { PublicSeat, PublicTableState } from '@card-game/shared'
+import { cardArtUrl } from '../assets/cardArt'
 import { CLASS_COLORS } from '../deckTheme'
 import { effectPills } from '../player/cards'
 import { tokens } from '../player/styles'
@@ -332,29 +333,40 @@ function CenterRegion({
 
   // inMatch
   if (!table.lastPlayed) return <Circle>no card played yet</Circle>
-  const { name, effects, bySeatId } = table.lastPlayed
+  const { defId, name, effects, bySeatId } = table.lastPlayed
   return (
     <Circle>
       <div
         style={{
-          width: 130,
-          minHeight: 160,
+          width: 140,
+          minHeight: 175,
           background: '#fdfdfb',
           color: '#1a1a1a',
           borderRadius: 10,
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          justifyContent: 'center',
           padding: 10,
+          boxSizing: 'border-box',
           boxShadow: '0 6px 20px rgba(0,0,0,0.5)',
         }}
       >
+        <img
+          src={cardArtUrl(defId)}
+          alt=""
+          style={{
+            width: '100%',
+            height: 70,
+            objectFit: 'cover',
+            borderRadius: 6,
+          }}
+        />
         <div
           style={{
             fontFamily: tokens.fontDisplay,
             fontWeight: 700,
             textAlign: 'center',
+            marginTop: 8,
           }}
         >
           {name}

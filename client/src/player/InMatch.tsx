@@ -10,6 +10,7 @@
 
 import { useState } from 'react'
 import type { ActionResult, HandCard, PublicSeat } from '@card-game/shared'
+import { cardArtUrl } from '../assets/cardArt'
 import { CLASS_COLORS } from '../deckTheme'
 import { describeEffects, effectPills } from './cards'
 import {
@@ -128,12 +129,15 @@ export function InMatch({
             >
               {card.name}
             </h4>
-            <div
+            <img
+              src={cardArtUrl(card.defId)}
+              alt=""
               style={{
                 flex: 1,
+                minHeight: 0,
                 margin: '8px 2px',
                 borderRadius: 8,
-                background: tokens.inset,
+                objectFit: 'cover',
                 border: '1px solid rgba(201,162,39,0.45)',
               }}
             />
@@ -338,12 +342,14 @@ function TargetingScreen({
           marginTop: 14,
         }}
       >
-        <div
+        <img
+          src={cardArtUrl(card.defId)}
+          alt=""
           style={{
             width: 52,
             height: 74,
             borderRadius: 8,
-            background: tokens.inset,
+            objectFit: 'cover',
             border: '1px solid rgba(201,162,39,0.5)',
             flexShrink: 0,
           }}
