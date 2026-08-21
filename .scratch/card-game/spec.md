@@ -25,26 +25,47 @@ Full contract ([Pin the exact wire contract](issues/07-wire-protocol.md)):
 ```typescript
 // shared/src/index.ts
 
-export type CardType = 'Attack' | 'Defense' | 'Heal'
+export type EffectKind = 'attack' | 'shield' | 'heal' | 'draw' | 'strip'
+
+// attack, strip: 'single' = chosen opponent, 'all' = every living opponent.
+// shield, heal, draw: always resolve on the player who played the card.
+export type TargetMode = 'single' | 'all'
+
+export interface CardEffect {
+  kind: EffectKind
+  value: number
+  target: TargetMode
+}
+
+export type DeckId = 'red' | 'green' | 'blue' | 'yellow'
 
 export interface HandCard {
-  id: string
-  type: CardType
-  value?: number // absent for Defense
-  legal: boolean // per game-mechanics.md's legal-play conditions
+  id: string // instance id, unique within this hand
+  defId: string // card definition id — also the art filename
+  name: string
+  effects: CardEffect[]
+  playAgain: boolean
+  needsTarget: boolean // any effect with target 'single' and kind attack|strip
 }
 
 export interface PublicSeat {
   seatId: string
   name: string | null // null = open, unclaimed
+  deckId: DeckId | null // random on join; null only for unclaimed seats
   isHost: boolean
   hp: number
-  shielded: boolean
+  shields: number // 0..4, each point absorbs 1 damage
   eliminated: boolean
   handCount: number // count only — contents are private, see `yourHand`
 }
 
-export type LastPlayed = { type: CardType; value?: number; bySeatId: string } | null
+export type LastPlayed = {
+  defId: string
+  name: string
+  effects: CardEffect[]
+  bySeatId: string
+  targetSeatId: string | null
+} | null
 
 export type MatchResult = { winnerSeatId: string } | { draw: true }
 
@@ -54,6 +75,7 @@ export interface PublicTableState {
   phase: 'lobby' | 'inMatch' | 'matchOver'
   seats: PublicSeat[]
   turnSeatId: string | null // null in lobby/matchOver
+  chainCount: number // consecutive playAgain plays this turn, 0 normally
   lastPlayed: LastPlayed
   eliminationOrder: string[] // seatIds, in the order they were eliminated
   matchResult: MatchResult | null // set once phase === 'matchOver'
@@ -90,7 +112,7 @@ The display client never calls `join`. It connects via a separate `joinAsDisplay
 
 ### Hand privacy
 
-`tableState` broadcasts to every connected socket (seated or not) and carries **hand counts only** — never card contents. A private `yourHand` event, sent only to the socket that owns a seat, carries that seat's full hand (`HandCard[]`, with `legal` computed server-side per `game-mechanics.md`'s legality rules). This is the concrete mechanism that keeps a hand from leaking to other players or the display.
+`tableState` broadcasts to every connected socket (seated or not) and carries **hand counts only** — never card contents. A private `yourHand` event, sent only to the socket that owns a seat, carries that seat's full hand (`HandCard[]`). There is no legality gate to compute — per `game-mechanics.md`, every card is always playable — so a `HandCard` carries its `effects` and `needsTarget`, not a computed legal flag. This is the concrete mechanism that keeps a hand from leaking to other players or the display.
 
 ### Public vs. internal state
 
@@ -101,9 +123,10 @@ The display client never calls `join`. It connects via a separate `joinAsDisplay
 ### Lobby / join
 
 - First socket to `join` a seat becomes host; only the host may call `start`.
+- A joining seat is dealt a random class deck (`deckId`) at join time — see `game-mechanics.md`'s "Classes". There's no deck-select UI; the class is simply announced next to the player's name.
 - `start` succeeds once 2–4 seats are filled (`{ok:false, reason:"need at least 2 players"}` below 2); the server randomizes turn order once and deals starting hands per `game-mechanics.md`.
 - Display client: connects via `joinAsDisplay`, shows the room code + LAN address and a live "N/4 joined" readout. Never shows a Start control (display is view-only).
-- Player client: name + room-code entry screen. Once joined, guests see "Waiting for the host to start…"; the host sees a Start button, disabled (with a "Need at least 2 players" label) below 2 players.
+- Player client: name + room-code entry screen. Once joined, guests see "Waiting for the host to start…"; the host sees a "Begin Battle" button, disabled (with a "Need at least 2 players" label) below 2 players.
 
 ### Turn pacing ([Turn pacing & timers](issues/01-turn-pacing.md))
 
@@ -131,31 +154,31 @@ No per-turn or per-play time limit. The acting player gets unlimited thinking ti
 
 ## Display client
 
-Ring-table layout ([Design display client layout](issues/05-display-client-layout.md), prototype on branch `prototype/display-client-layout`; win/restart addition in [Design win/restart screen](issues/08-win-restart-screen-layout.md), prototype `client/prototype-winscreen.html` + `client/src/prototype-winscreen/` on `main`):
+Ring-table layout ([Design display client layout](issues/05-display-client-layout.md), originally prototyped on branch `prototype/display-client-layout`; win/restart addition in [Design win/restart screen](issues/08-win-restart-screen-layout.md)):
 
 - Seats sit at fixed cardinal positions around a central table: North/South for 2 players, North/East/South for 3, all four of North/East/South/West for 4.
-- Each seat box shows name, host crown, HP bar, shield status. The currently-active seat gets a glowing gold border. A face-down card-back fan renders below each seat, sized to that seat's `handCount` — never card contents.
+- Each seat box shows name, host crown, HP bar, a numeric shield count (0–4, from `shields`), and is tinted by the seat's class (`deckId`). The currently-active seat gets a glowing gold border; a seat that was just hit by an attack or strip flashes red briefly. A face-down card-back fan renders below each seat, sized to that seat's `handCount` — never card contents.
 - Eliminated seats stay in their slot, dimmed, marked "OUT", hand fan hidden.
 - The table's center is phase-dependent:
   - **Lobby**: a plain "N/4 joined" readout, plus the room code and LAN address.
-  - **In-match**: the most recently played card, face-up (type icon, value, who played it — from `lastPlayed`).
+  - **In-match**: the most recently played card, face-up — art, name, one pill per effect (from `lastPlayed.effects`), and who played it.
   - **Match over**: a gold-bordered card — 🏆 + winner name, or 🤝 + "Draw!" — with the full elimination order below it as an arrow-chain ending at the winner (the winner's seat also gets the gold highlight), plus a small non-interactive line: "Waiting for the host to start a new match…".
 - No timer/countdown element anywhere on this client.
 - No interactive control of any kind — the display client is strictly view-only; Start and New Match live only on the host's player client.
 
 ## Player client
 
-Grid + persistent action bar layout ([Design player client layout & interaction](issues/06-player-client-layout.md), prototype `client/prototype-player.html` + `client/src/prototype-player/` on `main`; win/restart addition in [Design win/restart screen](issues/08-win-restart-screen-layout.md), prototype `client/prototype-winscreen.html` + `client/src/prototype-winscreen/` on `main`):
+Grid + persistent action bar layout ([Design player client layout & interaction](issues/06-player-client-layout.md); win/restart addition in [Design win/restart screen](issues/08-win-restart-screen-layout.md)):
 
-- **Join screen**: name + room-code fields, Join button.
-- **Lobby**: roster of joined names. Host sees a Start button (disabled below 2 players, labeled "Need at least 2 players" while disabled). Guests see "Waiting for the host to start…".
-- **In-hand view**: the hand renders as a 2-column grid of square cards (icon, type, value). Tapping a legal card selects it (highlighted border) without playing it; illegal ("dead") cards stay in the grid, greyed and disabled, with a one-line reason (e.g. "already shielded") rather than being hidden.
-- **Play action bar**: a persistent bottom bar reads "Play {selected card}", disabled until a legal card is selected.
-- **Targeting**: tapping Play on a selected Attack opens a full-screen target picker listing only living opponents. Defense/Heal play directly with no target step.
-- **Status**: own HP as a large number + shield badge at top-center; turn state as a pill ("Your turn" / "{name}'s turn"). When it's not your turn, the whole hand grid dims and stops accepting taps (it never disappears).
+- **Join screen**: name + room-code fields, an "Enter the Fray" button (shows "Joining…" while a join is in flight).
+- **Lobby**: every seat shown, including open ones (dashed "Awaiting a champion…"); each claimed seat shows name, class (from `deckId`), and host crown. Host sees a "Begin Battle" button (disabled below 2 players, labeled "Need at least 2 players" while disabled). Guests see "Waiting for the host to start…".
+- **In-hand view**: no legality to render — every card is playable, so there's no select-then-confirm step and no "dead card" styling. **Tapping a card plays it immediately** unless it needs a target and more than one opponent is alive, in which case it goes straight to the full-screen targeting screen below — no intermediate selected state on the hand screen itself. Each card shows its name, art, and a stack of effect pills (one per entry in `effects`, colored by kind: attack/shield/heal/draw/strip).
+- **Targeting screen**: a separate screen, not an overlay hint — the chosen card (art, name, its effects described in words) up top, then one row per living opponent (name, class, HP, shields); tapping a row plays the card against that opponent. A cancel control returns to the hand screen without playing. Only reached when `needsTarget` is true and more than one opponent is alive — a single living opponent is auto-targeted server-side and this screen never shows.
+- **Status**: own HP as a bar (numeric fill) + up to 4 shield pips at top-center; a foe strip along the very top (name, HP, shields, dimmed if eliminated); turn state as a banner ("YOUR TURN" / "{NAME}'S TURN"). When it's not your turn, the hand dims and stops accepting taps (it never disappears).
+- **Reconnect veil**: if this device's own socket drops while it holds a seat, a full-screen overlay ("Reconnecting…") with a client-side countdown covers whatever screen was showing, clearing the instant the socket reconnects. No protocol change — this is purely a client-side timer against the same 60s window described below.
 - **Eliminated state**: a static "you're eliminated" screen and nothing else (see "Eliminated player experience" above) — this replaces the normal in-match view entirely for that seat.
-- **Match over**: a plain centered "🏁 Match over — check the shared screen" card. The host additionally gets a "New match" button in the same style as the lobby's Start button, disabled below 2 players connected with the same "Need at least 2 players" label. Non-hosts get nothing further.
-- No timer/countdown UI anywhere on this client.
+- **Match over**: a plain centered "🏁 Match over — check the shared screen" card. The host additionally gets a "New match" button in the same style as the lobby's start button, disabled below 2 players connected with the same "Need at least 2 players" label. Non-hosts get nothing further.
+- No turn timer/countdown UI anywhere on this client — the only countdown is the reconnect veil above, and that only appears on an actual disconnect.
 
 ## Out of scope
 
@@ -164,9 +187,12 @@ Grid + persistent action bar layout ([Design player client layout & interaction]
 - Spectator viewers beyond the display client (no separate "watch only" phone role).
 - Persistent accounts or stats across matches (identity is ephemeral, per-session).
 - Multi-table / multi-tenant server support (ADR-0001: one table per instance).
-- Real card art, theming, sound, animation, chat.
+- Sound, spell/attack animation beyond the display's attack flash, chat.
 - Internet-hosted deployment beyond LAN (ADR-0001).
 
 ## Known cleanup debt
 
-Three prototype directories from the design process are sitting in `client/` on `main` rather than on throwaway branches (by explicit user choice during design, not the usual convention): `client/prototype-player.html` + `client/src/prototype-player/`, and `client/prototype-winscreen.html` + `client/src/prototype-winscreen/`. (A third, `client/prototype-display.html` + `client/src/prototype-display/`, correctly landed on branch `prototype/display-client-layout` instead.) None of these ship in production — this project's Vite build only bundles `index.html` by default — but they should be deleted once the real implementation replaces them.
+Resolved — the prototype directories this section used to flag
+(`client/prototype-player.html`, `client/prototype-winscreen.html`, and
+their `client/src/prototype-*/` companions) are gone; `client/` only has
+`index.html` now.
