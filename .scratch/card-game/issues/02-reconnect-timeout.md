@@ -18,3 +18,7 @@ This feeds the wire protocol (reconnect handshake, elimination-by-timeout event)
 - **Idle-timeout duration**: 60 seconds disconnected before auto-elimination.
 - **Turn rotation during disconnect**: auto-pass. Each time rotation reaches a disconnected seat, it's treated as an instant "no legal plays" turn and play moves on immediately to the next living player — the match never pauses waiting on one dropped player. The 60s elimination clock runs continuously in the background from the moment of disconnect, independent of whose turn it is (no separate/shorter grace period for an active turn — same single timer either way).
 - **Auto-elimination consequences**: identical to reaching 0 HP per `docs/game-mechanics.md` — deck/hand/discard removed from play, permanently skipped in future turn rotation. One elimination mechanism for the whole system; no separate "eliminated-by-timeout" variant.
+
+## Comments
+
+**2026-08-21**: The "no legal plays" phrasing above is a holdover from the original play-until-can't rules. The `game-update/` rules migration removed the legality concept entirely — every card is always playable — so a disconnected seat's auto-passed turn is better described as a no-op (nobody's there to act), not a legality outcome. The mechanics themselves (60s timer, auto-pass, same elimination path) are unaffected.

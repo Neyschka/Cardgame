@@ -19,3 +19,7 @@ One cohesive mockup rather than a 3-variant switcher — this ticket only fills 
 Prototype: `client/prototype-winscreen.html` + `client/src/prototype-winscreen/`. Landed directly on `main` again by the user's explicit call, same as the player client layout prototype — not the usual throwaway branch. Inert in production (outside the default Vite build), but cleanup debt alongside the other two prototype directories still sitting in the tree (`prototype-player`, `prototype-winscreen`) once real implementation replaces them.
 
 **This was the last open ticket — the map's frontier is now empty.**
+
+## Comments
+
+**2026-08-21**: The match-end mechanics described above are unaffected by the `game-update/` rules migration. The prototype files this ticket links (`client/prototype-winscreen.html`, `client/src/prototype-winscreen/`) have since been deleted — the real implementation replaced them.

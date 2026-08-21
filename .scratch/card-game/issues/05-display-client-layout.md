@@ -30,3 +30,7 @@ The center of the table is dual-purpose: in the lobby it shows a plain "N/4 join
 **Correction to the original ticket's "host-only Start button" cover item**: no Start (or New Match) control lives on this client. `CONTEXT.md` defines the display client as view-only, accepting no input — the host triggers Start/New Match from their own player client instead (consistent with Post-match flow's resolution, which already put the "New Match" control on the host's phone). The display's lobby state shows join progress and the room code/LAN address only, no button.
 
 Prototype (3 variants explored, Variant A chosen, then refined per feedback to cardinal seating + face-down hand fans + face-up center card): branch `prototype/display-client-layout`.
+
+## Comments
+
+**2026-08-21**: The `game-update/` rules migration changed some of the details here without touching the layout itself. Shield status is a numeric pip count (0–4), not a boolean. The center's last-played card now shows its art, name, and a pill per effect (from `effects`), not a "type icon, value" pair — cards can carry more than one effect. Seat boxes are also tinted by the seat's class (`deckId`), which didn't exist when this ticket was answered. Current behavior lives in `client/src/display/RingTable.tsx`; `spec.md`'s "Display client" section is the current design description.

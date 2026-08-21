@@ -136,7 +136,7 @@ No per-turn or per-play time limit. The acting player gets unlimited thinking ti
 
 - A random token is minted on join, stored in the player client's `localStorage`, matched server-side on reconnect (see "Join / reconnect" above). Scoped to the current match only — invalidated once the match ends or a new match starts.
 - A disconnected seat is auto-eliminated after **60 seconds** disconnected.
-- Turn rotation auto-passes a disconnected seat instantly (treated as an instant "no legal plays" turn) — the match never pauses waiting on one dropped player. The 60s clock runs continuously in the background from the moment of disconnect, independent of whose turn it is; there's no separate/shorter grace period for an active turn.
+- Turn rotation auto-passes a disconnected seat instantly (treated as an instant no-op turn — nobody's there to act) — the match never pauses waiting on one dropped player. The 60s clock runs continuously in the background from the moment of disconnect, independent of whose turn it is; there's no separate/shorter grace period for an active turn.
 - Auto-elimination-by-timeout uses identical rules to reaching 0 HP: deck/hand/discard removed from play, permanently skipped in future rotation. There is exactly one elimination mechanism in the system.
 
 ### Eliminated player experience ([Eliminated player experience](issues/04-eliminated-player-experience.md))

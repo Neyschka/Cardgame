@@ -78,3 +78,7 @@ export interface ClientToServerEvents {
   newMatch: (ack: (result: ActionResult) => void) => void
 }
 ```
+
+## Comments
+
+**2026-08-21**: This contract predates the `game-update/` rules migration and is now stale — `CardType`, the `legal` flag, and the boolean `shielded` field don't match what shipped, and `deckId`/`effects`/`playAgain`/`chainCount` are missing entirely. Left as-is above since this ticket records what was decided at the time, not a living contract. The current wire contract is `shared/src/index.ts`; `spec.md`'s "Wire protocol" section is kept in sync with it — treat those two as the source of truth, not this code block.

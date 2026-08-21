@@ -20,3 +20,7 @@ Consequences:
 - No "turn expired" (or similar) event in the wire protocol.
 - No countdown UI on the display client or player client.
 - Pacing/timeout handling is entirely the concern of [Reconnect & idle-timeout mechanics](02-reconnect-timeout.md) — a disconnected seat still auto-eliminates on a timeout; a present, connected seat never does, regardless of how long they take.
+
+## Comments
+
+**2026-08-21**: The Question's "play-until-can't" description is the pre-migration turn structure; `docs/game-mechanics.md` now defines exactly-one-card-per-turn with optional `playAgain` chaining instead. This ticket's answer (no time limit, no countdown UI) is unaffected either way.
